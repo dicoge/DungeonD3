@@ -1,0 +1,274 @@
+{
+  "items": [
+    {
+      "id": "health_potion",
+      "name": "生命藥水",
+      "icon": "❤️",
+      "type": "consumable",
+      "rarity": "common",
+      "effect": { "heal": 30 },
+      "cost": 15
+    },
+    {
+      "id": "mana_potion",
+      "name": "魔法藥水",
+      "icon": "💙",
+      "type": "consumable",
+      "rarity": "common",
+      "effect": { "mana": 20 },
+      "cost": 20
+    },
+    {
+      "id": "bomb",
+      "name": "炸彈",
+      "icon": "💣",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "effect": { "damage": 40, "area": true },
+      "cost": 30
+    },
+    {
+      "id": "fire_scroll",
+      "name": "火球卷軸",
+      "icon": "📜",
+      "type": "consumable",
+      "rarity": "uncommon",
+      "effect": { "damage": 35, "fire": true },
+      "cost": 35
+    },
+    {
+      "id": "antidote",
+      "name": "解毒劑",
+      "icon": "💊",
+      "type": "consumable",
+      "rarity": "common",
+      "effect": { "cure_poison": true },
+      "cost": 10
+    },
+    {
+      "id": "strength_buff",
+      "name": "力量藥劑",
+      "icon": "💪",
+      "type": "consumable",
+      "rarity": "rare",
+      "effect": { "damage_buff": 50, "duration": 30 },
+      "cost": 50
+    },
+    {
+      "id": "speed_buff",
+      "name": "速度藥劑",
+      "icon": "⚡",
+      "type": "consumable",
+      "rarity": "rare",
+      "effect": { "speed_buff": 30, "duration": 30 },
+      "cost": 50
+    },
+    {
+      "id": "phoenix_feather",
+      "name": "鳳凰羽毛",
+      "icon": "🪶",
+      "type": "consumable",
+      "rarity": "legendary",
+      "effect": { "revive": true, "heal_full": true },
+      "cost": 200
+    },
+    {
+      "id": "iron_sword",
+      "name": "鐵劍",
+      "icon": "⚔️",
+      "type": "weapon",
+      "rarity": "common",
+      "effect": { "damage": 10 },
+      "cost": 25
+    },
+    {
+      "id": "flame_sword",
+      "name": "火焰劍",
+      "icon": "🔥",
+      "type": "weapon",
+      "rarity": "rare",
+      "effect": { "damage": 18, "fire": 8 },
+      "cost": 80
+    },
+    {
+      "id": "frost_dagger",
+      "name": "冰霜匕首",
+      "icon": "❄️",
+      "type": "weapon",
+      "rarity": "uncommon",
+      "effect": { "damage": 12, "slow": 20 },
+      "cost": 45
+    },
+    {
+      "id": "poison_dagger",
+      "name": "淬毒匕首",
+      "icon": "🗡️",
+      "type": "weapon",
+      "rarity": "uncommon",
+      "effect": { "damage": 10, "poison": 5 },
+      "cost": 40
+    },
+    {
+      "id": "dragonslayer",
+      "name": "屠龍者",
+      "icon": "🐉",
+      "type": "weapon",
+      "rarity": "epic",
+      "effect": { "damage": 30, "dragon_bonus": 50 },
+      "cost": 180
+    },
+    {
+      "id": "godsword",
+      "name": "神罰之劍",
+      "icon": "⚡",
+      "type": "weapon",
+      "rarity": "legendary",
+      "effect": { "damage": 45, "divine": true, "undead_bonus": 100 },
+      "cost": 500
+    },
+    {
+      "id": "leather_armor",
+      "name": "皮甲",
+      "icon": "🦺",
+      "type": "armor",
+      "rarity": "common",
+      "effect": { "defense": 5 },
+      "cost": 18
+    },
+    {
+      "id": "chain_mail",
+      "name": "鎖子甲",
+      "icon": "⛓️",
+      "type": "armor",
+      "rarity": "uncommon",
+      "effect": { "defense": 12 },
+      "cost": 45
+    },
+    {
+      "id": "plate_armor",
+      "name": "板甲",
+      "icon": "🛡️",
+      "type": "armor",
+      "rarity": "rare",
+      "effect": { "defense": 20 },
+      "cost": 90
+    },
+    {
+      "id": "frost_shield",
+      "name": "冰霜盾牌",
+      "icon": "🧊",
+      "type": "armor",
+      "rarity": "rare",
+      "effect": { "defense": 15, "fire_resist": 50 },
+      "cost": 100
+    },
+    {
+      "id": "shadow_cloak",
+      "name": "暗影披風",
+      "icon": "🌑",
+      "type": "armor",
+      "rarity": "epic",
+      "effect": { "defense": 8, "dodge": 25, "stealth": 20 },
+      "cost": 150
+    },
+    {
+      "id": "tower_shield",
+      "name": "塔盾",
+      "icon": "🏰",
+      "type": "armor",
+      "rarity": "epic",
+      "effect": { "defense": 30, "block": 15 },
+      "cost": 160
+    },
+    {
+      "id": "key",
+      "name": "萬能鑰匙",
+      "icon": "🔑",
+      "type": "special",
+      "rarity": "uncommon",
+      "effect": { "unlock_doors": true },
+      "cost": 25
+    },
+    {
+      "id": "skull_key",
+      "name": "骨骸鑰匙",
+      "icon": "💀",
+      "type": "special",
+      "rarity": "rare",
+      "effect": { "unlock_special": true },
+      "cost": 75
+    },
+    {
+      "id": "rope",
+      "name": "繩索",
+      "icon": "🪢",
+      "type": "special",
+      "rarity": "common",
+      "effect": { "climb": true },
+      "cost": 5
+    },
+    {
+      "id": "torch",
+      "name": "火把",
+      "icon": "🔥",
+      "type": "special",
+      "rarity": "common",
+      "effect": { "light": true, "scare_undead": true },
+      "cost": 3
+    },
+    {
+      "id": "amulet_vitality",
+      "name": "生命護符",
+      "icon": "💎",
+      "type": "accessory",
+      "rarity": "rare",
+      "effect": { "max_hp": 30, "regen": 2 },
+      "cost": 95
+    },
+    {
+      "id": "ring_protection",
+      "name": "保護戒指",
+      "icon": "💍",
+      "type": "accessory",
+      "rarity": "uncommon",
+      "effect": { "defense": 5, "magic_resist": 10 },
+      "cost": 55
+    },
+    {
+      "id": "boots_speed",
+      "name": "速度之靴",
+      "icon": "👟",
+      "type": "armor",
+      "rarity": "rare",
+      "effect": { "speed": 15, "dodge": 10 },
+      "cost": 85
+    },
+    {
+      "id": "crown_wisdom",
+      "name": "智慧冠冕",
+      "icon": "👑",
+      "type": "accessory",
+      "rarity": "epic",
+      "effect": { "max_mana": 40, "cooldown_reduction": 20 },
+      "cost": 180
+    },
+    {
+      "id": "void_boots",
+      "name": "虛空之靴",
+      "icon": "🌌",
+      "type": "armor",
+      "rarity": "legendary",
+      "effect": { "speed": 20, "phase": true, "dodge": 25 },
+      "cost": 350
+    },
+    {
+      "id": "wand_lightning",
+      "name": "閃電魔杖",
+      "icon": "🪄",
+      "type": "weapon",
+      "rarity": "uncommon",
+      "effect": { "damage": 14, "chain": 3 },
+      "cost": 55
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "boss": {
+    "id": "lich_king",
+    "name": "巫妖王",
+    "icon": "👑💀",
+    "floor": 5,
+    "hp": 800,
+    "damage": 35,
+    "def": 25,
+    "xp_reward": 500,
+    "rarity": "legendary",
+    "description": "曾經是魔法時代最偉大的國王，他以永恆的亡靈之躯統治死亡之国。他骵髏般的面容仍戴著早已化為塵土的帝國皇冠。",
+    "skills": [
+      {
+        "name": "骨骸風暴",
+        "icon": "💀",
+        "type": "projectile",
+        "damage": 20,
+        "description": "召喚一波骨骸碎片射向敵人",
+        "cooldown": 3
+      },
+      {
+        "name": "靈魂收割",
+        "icon": "👻",
+        "type": "area",
+        "damage": 30,
+        "description": "在目標區域施展靈魂虹吸，造成持續傷害",
+        "cooldown": 6
+      },
+      {
+        "name": "召喚亡靈",
+        "icon": "🧟",
+        "type": "summon",
+        "damage": 0,
+        "description": "召喚骷髅戰士和巫妖守衛前來助戰",
+        "cooldown": 10
+      },
+      {
+        "name": "死亡一指",
+        "icon": "☠️",
+        "type": "execute",
+        "damage": 80,
+        "description": "對低生命值目標施放的致命打擊",
+        "cooldown": 20,
+        "condition": "low_hp"
+      },
+      {
+        "name": "暗影領域",
+        "icon": "🌑",
+        "type": "debuff",
+        "damage": 0,
+        "description": "在競技場周圍散發暗影之力，減少敵人攻击力",
+        "cooldown": 15,
+        "effect": { "damage_debuff": 25, "duration": 8 }
+      }
+    ],
+    "attack_patterns": [
+      {
+        "pattern": "phased",
+        "description": "第一階段：巫妖王坐在骸骨王座上，從遠處施放詛咒和法術",
+        "hp_threshold": 0.5
+      },
+      {
+        "pattern": "enraged",
+        "description": "第二階段：受到重傷後憤怒地站起，疯狂攻擊並召唤更強大的亡靈",
+        "hp_threshold": 0.5
+      }
+    ],
+    "phases": [
+      {
+        "phase": 1,
+        "name": "王座之影",
+        "hp": 400,
+        "description": "巫妖王坐在骸骨王座上，指挥亡灵大军同时从远处施放强大的诅咒法术。",
+        "attacks": ["骨骸風暴", "召喚亡靈", "暗影領域"],
+        "behavior": "ranged_throne"
+      },
+      {
+        "phase": 2,
+        "name": "復仇之魂",
+        "hp": 400,
+        "description": "被激怒的巫妖王从王座上站起，手持傳說中的權杖。攻擊變得激進和致命。",
+        "attacks": ["靈魂收割", "死亡一指", "召喚亡靈", "骨骸風暴"],
+        "behavior": "melee_rage"
+      }
+    ],
+    "drops": [
+      {
+        "id": "crown_lich",
+        "name": "巫妖王冠",
+        "icon": "👑",
+        "rarity": "legendary",
+        "chance": 1.0,
+        "effect": { "max_hp": 50, "magic": 30, "undead_command": 25 }
+      },
+      {
+        "id": "bone_scepter",
+        "name": "骸骨權杖",
+        "icon": "💀",
+        "rarity": "epic",
+        "chance": 0.8,
+        "effect": { "damage": 20, "summon_undead": true }
+      },
+      {
+        "id": "phoenix_feather",
+        "name": "鳳凰羽毛",
+        "icon": "🪶",
+        "rarity": "legendary",
+        "chance": 0.3,
+        "effect": { "revive": true, "heal_full": true }
+      },
+      {
+        "id": "godsword",
+        "name": "神罰之劍",
+        "icon": "⚡",
+        "rarity": "legendary",
+        "chance": 0.15,
+        "effect": { "damage": 45, "divine": true, "undead_bonus": 100 }
+      }
+    ],
+    "weakness": ["神聖", "火焰", "魔法抵抗低"],
+    "resistance": ["物理", "毒素", "冰冷"],
+    "enrage_timer": 180,
+    "enrage_effect": {
+      "speed_multiplier": 1.5,
+      "damage_multiplier": 1.3
+    }
+  }
+}

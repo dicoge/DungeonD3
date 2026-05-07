@@ -1,0 +1,124 @@
+{
+  "upgrades": [
+    {
+      "id": "max_hp_boost",
+      "name": "Vitality Training",
+      "description": "Rigorous conditioning hardens the body, increasing maximum health.",
+      "type": "passive",
+      "effect": { "max_hp": 15 },
+      "tier": 1,
+      "cost": 30,
+      "prerequisites": []
+    },
+    {
+      "id": "attack_power_boost",
+      "name": "Brutal Strikes",
+      "description": "Learn to hit where it hurts, increasing base damage output.",
+      "type": "passive",
+      "effect": { "damage": 8 },
+      "tier": 1,
+      "cost": 30,
+      "prerequisites": []
+    },
+    {
+      "id": "speed_training",
+      "name": "Swift Feet",
+      "description": "Dance faster through the dungeon, outpacing even swift enemies.",
+      "type": "passive",
+      "effect": { "speed": 4 },
+      "tier": 1,
+      "cost": 25,
+      "prerequisites": []
+    },
+    {
+      "id": "double_jump",
+      "name": "Acrobatic Training",
+      "description": "Master the air, gaining the ability to double-jump to reach new heights.",
+      "type": "ability",
+      "effect": { "double_jump": true, "air_control": 50 },
+      "tier": 2,
+      "cost": 60,
+      "prerequisites": ["speed_training"]
+    },
+    {
+      "id": "critical_mastery",
+      "name": "Critical Precision",
+      "description": "Strike at weak points with deadly accuracy, greatly increasing critical hit chance.",
+      "type": "passive",
+      "effect": { "critical_chance": 15, "critical_damage": 25 },
+      "tier": 2,
+      "cost": 55,
+      "prerequisites": ["attack_power_boost"]
+    },
+    {
+      "id": "poison_imunity",
+      "name": "Serum Resistance",
+      "description": "Build immunity to toxins through controlled exposure therapy.",
+      "type": "passive",
+      "effect": { "poison_resist": 100, "poison_bonus": 20 },
+      "tier": 2,
+      "cost": 50,
+      "prerequisites": []
+    },
+    {
+      "id": "life_stealer",
+      "name": "Vampiric Strikes",
+      "description": "Your weapons become fangs, stealing life from enemies with each hit.",
+      "type": "passive",
+      "effect": { "life_steal": 10 },
+      "tier": 3,
+      "cost": 80,
+      "prerequisites": ["attack_power_boost", "max_hp_boost"]
+    },
+    {
+      "id": "shadow_dodge",
+      "name": "Shadow Meld",
+      "description": "Learn to blur into shadows when danger approaches, granting dodge chance.",
+      "type": "passive",
+      "effect": { "dodge": 20, "stealth": 30 },
+      "tier": 3,
+      "cost": 75,
+      "prerequisites": ["speed_training", "double_jump"]
+    },
+    {
+      "id": "magic_amplification",
+      "name": "Arcane Intensification",
+      "description": "Focus magical energy into devastating offensive power.",
+      "type": "passive",
+      "effect": { "magic_damage": 25, "mana_cost": -20 },
+      "tier": 3,
+      "cost": 70,
+      "prerequisites": []
+    },
+    {
+      "id": "area_attack",
+      "name": "Whirlwind Strike",
+      "description": "Spin with devastating force, striking all nearby enemies.",
+      "type": "active",
+      "effect": { "area_damage": 15, "cooldown": 8 },
+      "tier": 3,
+      "cost": 90,
+      "prerequisites": ["critical_mastery"]
+    },
+    {
+      "id": "armor_penetration",
+      "name": "Piercing Strikes",
+      "description": "Your attacks ignore enemy armor entirely.",
+      "type": "passive",
+      "effect": { "armor_pierce": 50 },
+      "tier": 4,
+      "cost": 120,
+      "prerequisites": ["critical_mastery", "area_attack"]
+    },
+    {
+      "id": "immortal_will",
+      "name": "Undying Will",
+      "description": "Refuse death itself, staying on your feet when others would fall. Breaks once per floor.",
+      "type": "passive",
+      "effect": { "death_defiance": true, "defiance_hp": 5 },
+      "tier": 4,
+      "cost": 150,
+      "prerequisites": ["max_hp_boost", "life_stealer"]
+    }
+  ]
+}

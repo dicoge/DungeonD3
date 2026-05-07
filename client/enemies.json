@@ -1,0 +1,213 @@
+{
+  "enemies": [
+    {
+      "id": "slime",
+      "name": "史萊姆",
+      "icon": "🟢",
+      "floor": 1,
+      "hp": 30,
+      "damage": 5,
+      "def": 2,
+      "xp_reward": 10,
+      "rarity": "common"
+    },
+    {
+      "id": "goblin",
+      "name": "哥布林",
+      "icon": "👺",
+      "floor": 1,
+      "hp": 35,
+      "damage": 6,
+      "def": 3,
+      "xp_reward": 12,
+      "rarity": "common"
+    },
+    {
+      "id": "bat",
+      "name": "洞穴蝙蝠",
+      "icon": "🦇",
+      "floor": 1,
+      "hp": 25,
+      "damage": 7,
+      "def": 1,
+      "xp_reward": 8,
+      "rarity": "common"
+    },
+    {
+      "id": "rat",
+      "name": "毒鼠",
+      "icon": "🐀",
+      "floor": 1,
+      "hp": 28,
+      "damage": 5,
+      "def": 2,
+      "xp_reward": 9,
+      "rarity": "common"
+    },
+    {
+      "id": "spider",
+      "name": "洞穴蜘蛛",
+      "icon": "🕷️",
+      "floor": 1,
+      "hp": 32,
+      "damage": 6,
+      "def": 3,
+      "xp_reward": 11,
+      "rarity": "common"
+    },
+    {
+      "id": "skeleton",
+      "name": "骷髅戰士",
+      "icon": "💀",
+      "floor": 2,
+      "hp": 56,
+      "damage": 11,
+      "def": 5,
+      "xp_reward": 20,
+      "rarity": "common"
+    },
+    {
+      "id": "ghost",
+      "name": "幽靈",
+      "icon": "👻",
+      "floor": 2,
+      "hp": 48,
+      "damage": 13,
+      "def": 3,
+      "xp_reward": 22,
+      "rarity": "common"
+    },
+    {
+      "id": "zombie",
+      "name": "喪屍",
+      "icon": "🧟",
+      "floor": 2,
+      "hp": 65,
+      "damage": 9,
+      "def": 6,
+      "xp_reward": 18,
+      "rarity": "common"
+    },
+    {
+      "id": "goblin_elite",
+      "name": "哥布林精英",
+      "icon": "⭐👺",
+      "floor": 2,
+      "hp": 80,
+      "damage": 15,
+      "def": 8,
+      "xp_reward": 35,
+      "rarity": "elite"
+    },
+    {
+      "id": "skeleton_elite",
+      "name": "骷髅精英",
+      "icon": "⭐💀",
+      "floor": 3,
+      "hp": 104,
+      "damage": 17,
+      "def": 10,
+      "xp_reward": 45,
+      "rarity": "elite"
+    },
+    {
+      "id": "orc",
+      "name": "獸人戰士",
+      "icon": "👹",
+      "floor": 3,
+      "hp": 95,
+      "damage": 16,
+      "def": 9,
+      "xp_reward": 40,
+      "rarity": "common"
+    },
+    {
+      "id": "troll",
+      "name": "食人魔",
+      "icon": "🧌",
+      "floor": 3,
+      "hp": 120,
+      "damage": 14,
+      "def": 12,
+      "xp_reward": 50,
+      "rarity": "common"
+    },
+    {
+      "id": "imp",
+      "name": "惡魔小子",
+      "icon": "😈",
+      "floor": 3,
+      "hp": 70,
+      "damage": 18,
+      "def": 6,
+      "xp_reward": 38,
+      "rarity": "common"
+    },
+    {
+      "id": "shadow_wraith_elite",
+      "name": "暗影幽靈精英",
+      "icon": "⭐👻",
+      "floor": 3,
+      "hp": 90,
+      "damage": 22,
+      "def": 8,
+      "xp_reward": 55,
+      "rarity": "elite"
+    },
+    {
+      "id": "golem",
+      "name": "石魔像",
+      "icon": "🗿",
+      "floor": 4,
+      "hp": 180,
+      "damage": 20,
+      "def": 20,
+      "xp_reward": 70,
+      "rarity": "common"
+    },
+    {
+      "id": "demon",
+      "name": "惡魔侍從",
+      "icon": "👿",
+      "floor": 4,
+      "hp": 130,
+      "damage": 24,
+      "def": 12,
+      "xp_reward": 65,
+      "rarity": "common"
+    },
+    {
+      "id": "dragon_minion",
+      "name": "龍人衛兵",
+      "icon": "🐉",
+      "floor": 4,
+      "hp": 150,
+      "damage": 22,
+      "def": 15,
+      "xp_reward": 68,
+      "rarity": "common"
+    },
+    {
+      "id": "lich_guardian",
+      "name": "巫妖守衛",
+      "icon": "☠️",
+      "floor": 4,
+      "hp": 200,
+      "damage": 26,
+      "def": 18,
+      "xp_reward": 80,
+      "rarity": "elite"
+    },
+    {
+      "id": "gatekeeper",
+      "name": "深淵守門者",
+      "icon": "🌑",
+      "floor": 4,
+      "hp": 280,
+      "damage": 30,
+      "def": 25,
+      "xp_reward": 100,
+      "rarity": "elite"
+    }
+  ]
+}

@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>地城骰子 — DungeonD3</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: #0a0a14; color: #e0e0e0; height: 100dvh; overflow: hidden; }
+
+        :root {
+            --bg: #0a0a14;
+            --panel: #12122a;
+            --panel2: #1a1a3a;
+            --border: #2a2a5a;
+            --accent: #e94560;
+            --accent2: #ab47bc;
+            --cyan: #4fc3f7;
+            --green: #4caf50;
+            --red: #ef5350;
+            --yellow: #ffd600;
+            --gold: #ffd700;
+            --purple: #ab47bc;
+            --text: #e0e0e0;
+            --muted: #888;
+        }
+
+        /* ===== 全域佈局 ===== */
+        #game { max-width: 480px; margin: 0 auto; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 1; }
+
+        /* ===== 頂部狀態列（永遠可見）===== */
+        #status-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--panel); border-bottom: 2px solid var(--border);
+            padding: 8px 14px; flex-shrink: 0;
+        }
+        #status-bar .floor-tag { color: var(--accent); font-weight: bold; font-size: 0.85em; }
+        #status-bar .hp-display { font-size: 0.85em; color: var(--red); }
+        #status-bar .gold-display { font-size: 0.85em; color: var(--yellow); }
+        #status-bar .pts-display { font-size: 0.85em; color: var(--cyan); font-weight: bold; text-shadow: 0 0 8px rgba(79,195,247,0.6); }
+
+        /* ===== 底部 Tab 導航 ===== */
+        #bottom-nav {
+            display: flex; flex-shrink: 0; border-top: 2px solid var(--border);
+            background: var(--panel);
+        }
+        .nav-tab {
+            flex: 1; padding: 10px 4px; background: none; border: none;
+            color: var(--muted); font-size: 0.75em; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            transition: all 0.2s;
+        }
+        .nav-tab .tab-icon { font-size: 1.4em; }
+        .nav-tab.active { color: var(--cyan); background: var(--panel2); border-top: 2px solid var(--cyan); margin-top: -2px; }
+        .nav-tab .cost-hint { font-size: 0.6em; opacity: 0.6; }
+
+        /* ===== 畫面容器 ===== */
+        .screen {
+            display: none; flex-direction: column; flex: 1; overflow: hidden;
+        }
+        .screen.active { display: flex; }
+
+        /* ===== 浮動訊息 ===== */
+        #toast {
+            position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+            background: var(--panel); border: 2px solid var(--accent);
+            padding: 10px 24px; border-radius: 10px; font-size: 0.9em;
+            opacity: 0; transition: opacity 0.3s; z-index: 300; pointer-events: none;
+        }
+        #toast.show { opacity: 1; }
+
+        /* ==========================================
+           🎲 骰子畫面
+           ========================================== */
+        #screen-dice {
+            background: radial-gradient(ellipse at center, #1a1a3a 0%, #0a0a14 70%);
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        #dice-card {
+            background: var(--panel); border: 3px solid var(--accent2);
+            border-radius: 20px; padding: 32px 24px; width: 100%; max-width: 380px;
+            text-align: center; box-shadow: 0 0 40px rgba(171,71,188,0.2);
+        }
+        .dice-label { font-size: 0.8em; color: var(--muted); margin-bottom: 12px; }
+        #dice-giant {
+            font-size: 7em; line-height: 1; color: var(--accent2);
+            text-shadow: 0 0 30px rgba(171,71,188,0.6);
+            animation: none; margin: 16px 0; min-height: 120px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #dice-giant.rolling {
+            animation: diceRoll 0.1s infinite;
+        }
+        @keyframes diceRoll {
+            0%   { transform: rotate(-5deg) scale(1.05); }
+            50%  { transform: rotate(5deg) scale(0.95); }
+            100% { transform: rotate(-5deg) scale(1.05); }
+        }
+        #dice-result-text {
+            font-size: 1.1em; color: var(--cyan); margin-bottom: 8px; min-height: 28px;
+        }
+        #dice-guide {
+            font-size: 0.72em; color: var(--muted); line-height: 1.6;
+            background: #0a0a14; border-radius: 8px; padding: 10px; margin-bottom: 20px;
+        }
+        #btn-roll {
+            width: 100%; padding: 18px; font-size: 1.2em;
+            background: linear-gradient(135deg, var(--accent2), #7b1fa2);
+            border: none; border-radius: 14px; color: #fff; font-weight: bold;
+            cursor: pointer; letter-spacing: 1px;
+        }
+        #btn-roll:active { transform: scale(0.96); }
+        #btn-roll:disabled { opacity: 0.4; }
+
+        /* 擲完骰後的提示 */
+        #dice-ready-hint {
+            margin-top: 16px; font-size: 0.8em; color: var(--yellow);
+            display: none;
+        }
+
+        /* ==========================================
+           🗺️ 移動畫面
+           ========================================== */
+        #screen-move {
+            flex-direction: column; overflow: hidden;
+        }
+        #move-top {
+            flex-shrink: 0; background: var(--panel); border-bottom: 1px solid var(--border);
+            padding: 6px 12px; display: flex; justify-content: space-between;
+            align-items: center;
+        }
+        #floor-name-bar { font-size: 0.78em; color: var(--muted); }
+        #lore-text { font-size: 0.7em; color: var(--muted); font-style: italic;
+            background: var(--panel); border-bottom: 1px solid var(--border);
+            padding: 4px 12px; min-height: 24px; flex-shrink: 0; }
+
+        /* 地圖 */
+        #dungeon-map {
+            flex: 1; overflow: hidden; display: flex;
+            background: #050510; padding: 0;
+            position: relative; justify-content: center; align-items: center;
+            min-height: 180px; /* 強制最小高度 */
+        }
+        #map-grid {
+            display: grid; gap: 1px; background: #000;
+        }
+        .map-tile { display: flex; align-items: center; justify-content: center;
+            font-size: 0.8em; border-radius: 2px; transition: all 0.15s; }
+        .tile-void { background: #050510; }
+        .tile-wall { background: linear-gradient(135deg, #3d2b5a, #2a1f40); box-shadow: inset 0 0 6px rgba(100,50,150,0.4); border: 1px solid #4a3060; }
+        .tile-floor { background: #1a1a30; }
+        .tile-player { background: #00e5ff !important; color: #000; font-weight: bold; font-size: 1.4em; box-shadow: 0 0 16px #00e5ff, 0 0 32px rgba(0,229,255,0.4); animation: playerPulse 1.2s ease-in-out infinite; }
+        @keyframes playerPulse { 0%,100% { box-shadow: 0 0 16px #00e5ff, 0 0 32px rgba(0,229,255,0.4); } 50% { box-shadow: 0 0 24px #00e5ff, 0 0 48px rgba(0,229,255,0.6); transform: scale(1.1); } }
+        .tile-enemy { background: #ef5350; color: #fff; font-weight: bold; box-shadow: 0 0 8px rgba(239,83,80,0.6); }
+        .tile-stairs { background: #00c853; color: #000; font-weight: bold; box-shadow: 0 0 10px rgba(0,200,83,0.6); }
+        .tile-item { background: #ffe500; color: #000; box-shadow: 0 0 12px rgba(255,229,0,0.8); animation: itemGlow 1.5s ease-in-out infinite; }
+        @keyframes itemGlow { 0%,100% { box-shadow: 0 0 8px rgba(255,229,0,0.5); } 50% { box-shadow: 0 0 20px rgba(255,229,0,1); } }
+        .tile-trap { background: #ff6600; box-shadow: 0 0 8px rgba(255,102,0,0.6); }
+        .tile-boss { background: #8b0000; border: 2px solid #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.8); animation: bossGlow 0.8s infinite alternate; }
+        /* P0-1: Adjacent walkable tile glow */
+        .tile-adjacent { background: #1e2a4a; box-shadow: inset 0 0 8px rgba(0,229,255,0.25); animation: adjacentPulse 1.5s ease-in-out infinite; }
+        @keyframes adjacentPulse { 0%,100% { box-shadow: inset 0 0 6px rgba(0,229,255,0.2); } 50% { box-shadow: inset 0 0 12px rgba(0,229,255,0.45); } }
+        /* P0-3: Enemy attack range highlight */
+        .tile-enemy-range { background: #2a1010 !important; box-shadow: inset 0 0 10px rgba(255,40,40,0.35); border: 1px solid rgba(255,60,60,0.4); animation: enemyRangePulse 1s ease-in-out infinite; }
+        @keyframes enemyRangePulse { 0%,100% { box-shadow: inset 0 0 6px rgba(255,40,40,0.25); } 50% { box-shadow: inset 0 0 14px rgba(255,40,40,0.5); } }
+        @keyframes bossGlow { from { box-shadow: inset 0 0 5px #ff0000, 0 0 10px rgba(255,0,0,0.4); } to { box-shadow: inset 0 0 15px #ff0000, 0 0 25px rgba(255,0,0,0.8); } }
+
+        /* ===== 教學互動高亮系統 ===== */
+        .tut-highlight {
+            animation: tutPulse 1s ease-in-out infinite;
+            position: relative;
+            z-index: 300;
+        }
+        @keyframes tutPulse {
+            0%,100% { box-shadow: 0 0 0 3px rgba(255,200,0,0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 0 6px rgba(255,200,0,1); transform: scale(1.05); }
+        }
+        .tut-highlight-gold {
+            box-shadow: 0 0 0 4px rgba(255,215,0,0.9), 0 0 20px rgba(255,215,0,0.6) !important;
+            animation: tutGoldPulse 1.2s ease-in-out infinite;
+            border-radius: 12px;
+        }
+        @keyframes tutGoldPulse {
+            0%,100% { box-shadow: 0 0 0 3px rgba(255,215,0,0.6), 0 0 15px rgba(255,215,0,0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(255,215,0,1), 0 0 25px rgba(255,215,0,0.8); }
+        }
+        /* 教學箭頭手指 */
+        #tut-pointer {
+            display: none;
+            position: fixed;
+            z-index: 500;
+            pointer-events: none;
+            font-size: 28px;
+            transform-origin: center bottom;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        #tut-pointer.show { display: block; animation: tutFinger 1.5s ease-in-out infinite; }
+        @keyframes tutFinger {
+            0%,100% { transform: rotate(-15deg) scale(1); }
+            30% { transform: rotate(-10deg) scale(1.15) translateY(-4px); }
+            70% { transform: rotate(-15deg) scale(1) translateY(0); }
+        }
+        /* 教學嚴格模式：禁止非目標操作 */
+        /* 強 制道式教學：阻擋所有非教學目標的元素 */
+        .tut-forced #game > *:not(.tut-highlight):not(#dungeon-map):not(#tut-hint):not(#turn-over-banner):not(#tutorial-overlay),
+        .tut-forced #dungeon-map > *:not(.tut-highlight):not(#map-grid):not(#tut-hint) {
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        /* 允許教學高亮的元素穿透 */
+        .tut-highlight {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 600 !important;
+            box-shadow: 0 0 0 4px var(--gold), 0 0 20px var(--gold) !important;
+            animation: tutHighlightPulse 1s ease-in-out infinite;
+        }
+        @keyframes tutHighlightPulse {
+            0%,100% { box-shadow: 0 0 0 4px var(--gold), 0 0 20px var(--gold); }
+            50% { box-shadow: 0 0 0 6px var(--gold), 0 0 30px var(--gold); }
+        }
+        /* 教學手指箭頭 */
+        .tut-pointer {
+            display: none;
+            position: fixed;
+            font-size: 2em;
+            z-index: 700;
+            animation: tutPointerBounce 0.8s ease-in-out infinite;
+            text-shadow: 0 0 10px var(--gold);
+        }
+        .tut-pointer.show { display: block; }
+        @keyframes tutPointerBounce {
+            0%,100% { transform: rotate(-15deg) translateY(0); }
+            50% { transform: rotate(-15deg) translateY(-8px); }
+        }
+        .tut-highlight-gold {
+            animation: tutHighlightGold 1s ease-in-out infinite;
+        }
+        @keyframes tutHighlightGold {
+            0%,100% { box-shadow: 0 0 0 3px rgba(255,215,0,0.6), 0 0 15px rgba(255,215,0,0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(255,215,0,1), 0 0 25px rgba(255,215,0,0.8); }
+        }
+
+        /* P1-6: 浮動文字動畫 */
+        .float-text {
+            position: absolute;
+            font-size: 0.85em;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 50;
+            text-shadow: 0 0 6px currentColor, 0 2px 4px rgba(0,0,0,0.8);
+            animation: floatUp 1.2s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            20%  { opacity: 1; transform: translateY(-8px) scale(1.1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+        }
+
+        /* P1-5: 敵人死亡粒子動畫 */
+        .death-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+            animation: particleExplode 0.6s ease-out forwards;
+        }
+        @keyframes particleExplode {
+            0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.2); }
+        }
+
+        /* 手機優先：疊在地圖上的攻擊/道具 icon 按鈕 */
+        #action-buttons {
+            position: absolute; top: 8px; right: 8px;
+            display: flex; flex-direction: column; gap: 8px; z-index: 5;
+        }
+        .action-btn {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(10,10,20,0.85); border: 2px solid var(--cyan);
+            font-size: 1.3em; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .action-btn:disabled { opacity: 0.3; border-color: #555; }
+        .action-btn:active:not(:disabled) { transform: scale(0.92); }
+
+        /* 操作面板 */
+        #action-panel {
+            flex-shrink: 0; background: var(--panel); padding: 8px 10px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        #controls-row {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;
+        }
+        .ctrl-btn {
+            background: var(--panel2); border: 2px solid var(--border); color: #fff;
+            padding: 10px 4px; border-radius: 10px; font-size: 0.78em;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center;
+            gap: 2px; transition: all 0.15s; min-height: 50px; justify-content: center;
+        }
+        .ctrl-btn:active { transform: scale(0.95); }
+        .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+        .ctrl-btn .cost { font-size: 0.65em; color: var(--accent2); }
+        .ctrl-btn.primary { background: linear-gradient(135deg, var(--accent), #c73659); border-color: var(--accent); font-weight: bold; }
+        .ctrl-btn.attack { background: linear-gradient(135deg, #b71c1c, #7f0000); border-color: #ff4444; }
+        .ctrl-btn.heal { background: linear-gradient(135deg, #1b5e20, #2e7d32); border-color: var(--green); }
+        .ctrl-btn.affordable { border-color: var(--green); box-shadow: 0 0 8px rgba(76,175,80,0.3); }
+        .ctrl-btn.end-turn {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            border-color: var(--cyan); color: var(--cyan); font-weight: bold;
+        }
+
+        /* D-Pad — 縮小成輔助工具，預設收合 */
+        #dpad { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 3px; }
+        .dpad-btn {
+            background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+            color: #fff; font-size: 0.9em; padding: 3px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; min-height: 30px;
+        }
+        .dpad-btn:active { background: var(--cyan); color: #000; }
+        .dpad-center {
+            background: var(--panel); border-radius: 8px; display: flex;
+            align-items: center; justify-content: center; font-size: 0.75em;
+            color: var(--cyan); font-weight: bold; border: 1px solid var(--border);
+        }
+
+        /* 角色狀態列 */
+        #char-panel {
+            flex-shrink: 0; background: var(--panel); padding: 8px 12px;
+            display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--border);
+        }
+        #char-panel .char-hp { font-size: 0.75em; color: var(--red); }
+        #char-panel .char-xp { font-size: 0.75em; color: var(--cyan); }
+        .hp-bar-mini { background: #1a1a2a; border-radius: 4px; height: 8px; overflow: hidden; margin-top: 2px; flex: 1; max-width: 120px; }
+        .hp-bar-mini .fill { height: 100%; background: linear-gradient(90deg, #b71c1c, var(--red), #ff7070); border-radius: 4px; transition: width 0.3s; box-shadow: 0 0 6px rgba(239,83,80,0.5); }
+
+        /* 裝備按鈕 */
+        .equip-btn {
+            width: 32px; height: 32px;
+            background: #1a1a2a; border: 2px solid #333;
+            border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1em; transition: all 0.2s;
+        }
+        .equip-btn.equipped {
+            border-color: var(--cyan);
+            background: rgba(0,255,200,0.1);
+            box-shadow: 0 0 8px rgba(0,255,200,0.3);
+        }
+
+        /* 訊息日誌 */
+        #log-section {
+            background: rgba(10,10,20,0.92); border-top: 1px solid var(--border);
+            padding: 6px 10px; max-height: 80px; overflow-y: auto; flex-shrink: 0;
+            font-size: 0.95em; line-height: 1.5;
+        }
+        #log-section .log-line { font-size: 1em; padding: 2px 0; border-bottom: 1px solid rgba(42,42,90,0.5); }
+        .log-dmg { color: var(--red); }
+        .log-heal { color: var(--green); }
+        .log-info { color: var(--muted); }
+        .log-action { color: var(--cyan); }
+        .log-boss { color: #ff4444; font-weight: bold; }
+        .log-item { color: var(--yellow); }
+
+        /* 彈窗們 */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none; align-items: center;
+            justify-content: center; z-index: 200; flex-direction: column; padding: 20px;
+        }
+        .modal.show { display: flex; }
+        .modal-box {
+            background: var(--panel); border: 2px solid var(--accent);
+            border-radius: 16px; padding: 24px; max-width: 380px; width: 100%; text-align: center;
+        }
+        .modal-box h2 { color: var(--accent); margin-bottom: 10px; font-size: 1.4em; }
+        .modal-box p { color: var(--muted); font-size: 0.85em; margin-bottom: 16px; line-height: 1.5; }
+        .modal-btn {
+            width: 100%; padding: 12px; background: linear-gradient(135deg, var(--accent), #c73659);
+            border: none; border-radius: 10px; color: #fff; font-size: 1em; font-weight: bold;
+            cursor: pointer; margin-top: 6px;
+        }
+        .modal-btn:active { transform: scale(0.97); }
+        .modal-btn.secondary { background: var(--panel2); border: 1px solid var(--border); }
+        .gameover-title { font-size: 1.8em; margin-bottom: 8px; }
+        .gameover-title.win { color: var(--yellow); }
+        .gameover-title.lose { color: var(--red); }
+        .gameover-stats { font-size: 0.8em; color: var(--muted); margin: 8px 0; }
+
+        /* 升級卡片 */
+        .upgrade-card {
+            background: #0a0a14; border: 2px solid var(--border); border-radius: 10px;
+            padding: 12px; margin: 6px 0; text-align: left; cursor: pointer;
+        }
+        .upgrade-card:hover { border-color: var(--cyan); }
+        .upgrade-card .u-name { color: var(--cyan); font-weight: bold; font-size: 0.95em; }
+        .upgrade-card .u-desc { color: var(--muted); font-size: 0.8em; margin-top: 3px; }
+        .upgrade-card .u-tier { font-size: 0.65em; padding: 1px 6px; border-radius: 3px; display: inline-block; margin-bottom: 3px; }
+        .tier-1 { background: #555; }
+        .tier-2 { background: var(--green); color: #000; }
+        .tier-3 { background: var(--cyan); color: #000; }
+        .tier-4 { background: #7b1fa2; color: #fff; }
+
+        /* Boss */
+        .boss-modal-box { border-color: #ff4444 !important; }
+        .boss-modal-box h2 { color: #ff4444 !important; }
+
+        /* ==========================================
+           新手教學
+           ========================================== */
+        #tutorial-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex; align-items: center;
+            justify-content: center; z-index: 500; padding: 20px;
+            visibility: hidden; opacity: 0;
+        }
+        #tutorial-overlay.visible { visibility: visible !important; opacity: 1 !important; }
+        .tut-content {
+            background: var(--panel); border: 2px solid var(--cyan); border-radius: 16px;
+            padding: 28px; max-width: 400px; width: 100%; text-align: center;
+        }
+        .tut-content h2 { color: var(--cyan); font-size: 1.3em; margin-bottom: 16px; }
+        .tut-step { text-align: left; margin: 12px 0; font-size: 0.85em; line-height: 1.6; color: var(--text); }
+        .tut-step .step-title { color: var(--yellow); font-weight: bold; display: block; margin-bottom: 4px; }
+        .tut-num { display: inline-block; width: 24px; height: 24px; background: var(--cyan); color: #000; border-radius: 50%; line-height: 24px; font-size: 0.8em; font-weight: bold; margin-right: 8px; text-align: center; }
+        #tut-dots { display: flex; gap: 6px; justify-content: center; margin-top: 16px; }
+        .tut-dot { width: 10px; height: 10px; background: var(--border); border-radius: 50%; }
+        .tut-dot.active { background: var(--cyan); }
+        .tut-nav { display: flex; gap: 10px; margin-top: 20px; }
+
+        /* ===== 實戰教學 HUD 提示框 ===== */
+        #tut-hint {
+            position: absolute; top: 8px; left: 8px; right: 8px;
+            background: rgba(10,10,20,0.92);
+            border: 2px solid #9b30d0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.8em; color: #e0d0ff;
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+            transition: opacity 0.3s;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        #tut-hint .hint-title { font-weight: bold; color: #bf5fff; font-size: 0.9em; text-align: center; }
+        #tut-hint .hint-body { color: #c0b0e0; line-height: 1.5; text-align: left; font-size: 0.78em; flex-shrink: 0; min-height: 48px; }
+        #tut-hint .hint-log { color: #e0d0ff; text-align: left; flex: 1; overflow-y: auto; max-height: 100px; }
+        #tut-hint.hidden { opacity: 0; }
+        #turn-over-banner {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 200;
+            background: linear-gradient(135deg, #1a0a2e, #2d1b4e);
+            border-bottom: 2px solid var(--accent);
+            text-align: center;
+            padding: 10px 16px;
+            font-size: 0.9em;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+            animation: bannerPulse 2s ease-in-out infinite;
+        }
+        #turn-over-banner.show { display: block; }
+        #turn-over-banner .banner-title { font-size: 1.1em; font-weight: bold; color: var(--cyan); margin-bottom: 4px; }
+        #turn-over-banner .banner-sub { font-size: 0.8em; color: var(--muted); }
+        @keyframes bannerPulse {
+            0%,100% { background: linear-gradient(135deg, #1a0a2e, #2d1b4e); }
+            50% { background: linear-gradient(135deg, #2d1b4e, #3d2066); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== 遊戲主容器 ===== -->
+<div id="game">
+
+    <!-- 頂部狀態列 -->
+    <div id="status-bar">
+        <span class="floor-tag">🏰 第 <span id="cur-floor">1</span> 層</span>
+        <span class="pts-display" id="cur-pts">⚡ -- 點</span>
+        <span class="hp-display">❤️ <span id="cur-hp">30</span>/<span id="max-hp">30</span></span>
+        <span class="gold-display">💰 <span id="cur-gold">0</span></span>
+    </div>
+
+    <!-- ========== 🎲 骰子畫面 ========== -->
+    <div id="screen-dice" class="screen active">
+        <div id="dice-card">
+            <div class="dice-label">擲出你的命運</div>
+            <canvas id="dice-canvas" width="160" height="160" style="margin:16px 0;min-height:120px;display:block;margin-left:auto;margin-right:auto;"></canvas>
+            <div id="dice-result-text"></div>
+            <div id="dice-guide">
+                <b>D20 規則：</b><br>
+                擲出 1-3  → 獲得 <b style="color:var(--cyan)">3 點</b> 行動力<br>
+                擲出 4-12 → 獲得 <b style="color:var(--cyan)">4 點</b> 行動力<br>
+                擲出 13-20 → 獲得 <b style="color:var(--cyan)">6 點</b> 行動力
+            </div>
+            <button id="btn-roll" onclick="game.rollDice()">🎲 擲 D20 骰子</button>
+            <div id="dice-ready-hint">點下方按鈕切換到移動 →</div>
+        </div>
+    </div>
+
+    <!-- ========== 🗺️ 移動畫面 ========== -->
+    <div id="screen-move" class="screen">
+
+        <!-- 地城上半部：只留標題行 -->
+        <div id="move-top">
+            <span id="floor-name-bar">🏰 地城入口</span>
+            <span style="font-size:0.7em;color:var(--yellow)" id="pts-hint-move">⚡ -- 點</span>
+        </div>
+
+        <!-- 地圖：幾乎佔滿整個畫面 -->
+        <div id="dungeon-map">
+            <div id="tut-hint" class="hidden">
+                <div class="hint-title"></div>
+                <div class="hint-body"></div>
+                <div id="tut-log" class="hint-log"></div>
+            </div>
+            <div id="turn-over-banner">
+                <div class="banner-title">⚠️ 本回合行動力耗盡</div>
+                <div class="banner-sub">點擊「🎲 擲骰」進入下一輪，或使用道具恢復</div>
+            </div>
+            <div id="map-grid"></div>
+            <!-- 手機優先：攻擊/道具 icon 按鈕疊在地圖右上角 -->
+            <div id="action-buttons">
+                <button class="action-btn attack" id="btn-attack-map" onclick="game.doAttack()" title="⚔️ 攻擊後本回合結束！">
+                    ⚔️<span style="font-size:0.55em;position:absolute;bottom:1px;left:50%;transform:translateX(-50%);white-space:nowrap;color:#ff6;">⚠️</span>
+                </button>
+                <button class="action-btn item" id="btn-item-map" onclick="game.useItem(0)">💊</button>
+            </div>
+        </div>
+
+        <!-- ========== 控制面板（固定展開）========== -->
+        <div id="ctrl-panel">
+            <!-- 動作按鈕 -->
+            <div id="controls-row">
+                <button class="ctrl-btn attack" id="btn-attack" onclick="game.doAttack()" disabled title="⚔️ 攻擊敵人（消耗 1 點行動力）⚠️ 攻擊後本回合立刻結束！">
+                    <span>⚔️ 攻擊</span>
+                    <span class="cost">1 點 ⚠️最後一步</span>
+                </button>
+                <button class="ctrl-btn primary" id="btn-item" onclick="game.useItem(0)" disabled>
+                    <span>💊 道具</span>
+                    <span class="cost">2 點</span>
+                </button>
+                <button class="ctrl-btn end-turn" id="btn-end" onclick="game.doWait()">
+                    <span>⏭️ 結束</span>
+                    <span class="cost">下一輪</span>
+                </button>
+            </div>
+            <!-- D-Pad -->
+            <div id="dpad">
+                <div class="dpad-center" id="dpad-pts">⚡</div>
+                <button class="dpad-btn" id="dpad-up" onclick="game.doMove(0,-1)">⬆️</button>
+                <div class="dpad-center"></div>
+                <button class="dpad-btn" id="dpad-left" onclick="game.doMove(-1,0)">⬅️</button>
+                <div class="dpad-center" style="font-size:0.65em;color:var(--muted)">🧭</div>
+                <button class="dpad-btn" id="dpad-right" onclick="game.doMove(1,0)">➡️</button>
+                <div class="dpad-center"></div>
+                <button class="dpad-btn" id="dpad-down" onclick="game.doMove(0,1)">⬇️</button>
+                <div class="dpad-center"></div>
+            </div>
+            <!-- 角色狀態 + 道具 + 選單 -->
+            <div id="char-panel">
+                <div style="flex:1">
+                    <div class="char-hp">❤️ <span id="c-hp">30</span>/<span id="c-max">30</span></div>
+                    <div class="hp-bar-mini"><div class="fill" id="hp-bar" style="width:100%"></div></div>
+                </div>
+                <div style="flex:1">
+                    <div class="char-xp">⭐ <span id="c-xp">0</span>/<span id="c-xp-next">50</span></div>
+                    <div class="hp-bar-mini" style="background:#0a2a3a"><div class="fill" id="xp-bar" style="width:0%;background:linear-gradient(90deg,var(--cyan),#80deea)"></div></div>
+                </div>
+                <!-- 武器 / 護甲裝備槽 -->
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <button class="equip-btn" id="eq-weapon" onclick="game.unequipW()">
+                        <span id="eq-weapon-icon">⚔️</span>
+                    </button>
+                    <button class="equip-btn" id="eq-armor" onclick="game.unequipA()">
+                        <span id="eq-armor-icon">🛡️</span>
+                    </button>
+                </div>
+                <!-- 屬性數值 -->
+                <div style="display:flex;flex-direction:column;gap:1px;font-size:0.65em;color:var(--muted);line-height:1.2">
+                    <span id="c-atk">⚔️ 5</span>
+                    <span id="c-def">🛡️ 2</span>
+                </div>
+                <!-- 道具列（行動階段用）-->
+                <div id="inv-row"></div>
+                <div id="inventory-bar" style="display:none"></div>
+            </div>
+            <!-- 選單 -->
+            <div id="menu-row">
+                <button onclick="game.saveGame()">💾 存檔</button>
+                <button onclick="game.loadGame()">📂 讀檔</button>
+                <button onclick="game.restart()">🔄 重玩</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部導航 Tab -->
+    <div id="bottom-nav">
+        <button class="nav-tab active" id="tab-dice" onclick="switchScreen('dice')">
+            <span class="tab-icon">🎲</span>
+            <span>擲骰</span>
+            <span class="cost-hint" id="tab-pts-hint">-- 點</span>
+        </button>
+        <button class="nav-tab" id="tab-move" onclick="switchScreen('move')">
+            <span class="tab-icon">🗺️</span>
+            <span>移動</span>
+            <span class="cost-hint">花費行動點</span>
+        </button>
+    </div>
+</div>
+
+<!-- 浮動訊息 -->
+<div id="toast"></div>
+
+<!-- 通用彈窗 -->
+<div class="modal" id="generic-modal">
+    <div class="modal-box" id="generic-box"></div>
+</div>
+
+<!-- 升級彈窗 -->
+<div class="modal" id="upgrade-modal">
+    <div class="modal-box">
+        <h2>⬆️ 樓層通關！</h2>
+        <p>選擇一項永久強化：</p>
+        <div id="upgrade-list"></div>
+    </div>
+</div>
+
+<!-- Boss 彈窗 -->
+<div class="modal" id="boss-modal">
+    <div class="modal-box boss-modal-box">
+        <h2>💀 BOSS 出現！</h2>
+        <p id="boss-name" style="color:var(--accent);font-weight:bold;font-size:1.1em;"></p>
+        <p id="boss-desc" style="color:var(--muted);font-size:0.8em;margin:8px 0;"></p>
+        <div class="hp-bar-mini" style="max-width:100%;margin:8px 0"><div class="fill" id="boss-hp-bar" style="width:100%;background:linear-gradient(90deg,#8b0000,#ff0000)"></div></div>
+        <p id="boss-hp-text" style="font-size:0.8em;color:var(--muted);margin-top:4px;"></p>
+        <button class="modal-btn" onclick="tutorial.startBossFight()">⚔️ 迎戰！</button>
+    </div>
+</div>
+
+<!-- 遊戲結束 -->
+<div class="modal" id="gameover-modal">
+    <div class="modal-box">
+        <h2 class="gameover-title" id="go-title"></h2>
+        <p id="go-msg"></p>
+        <p class="gameover-stats" id="go-stats"></p>
+        <button class="modal-btn" onclick="tutorial.restartGame()">🔄 重新開始</button>
+    </div>
+</div>
+
+<script src="game.js"></script>
+<script>
+/* ================================================
+   畫面切換邏輯
+   ================================================ */
+function switchScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+    if (name === 'dice') {
+        document.getElementById('screen-dice').classList.add('active');
+        document.getElementById('tab-dice').classList.add('active');
+    } else {
+        document.getElementById('screen-move').classList.add('active');
+        document.getElementById('tab-move').classList.add('active');
+        game.render(); // 只刷新地圖
+    }
+}
+
+/* ================================================
+   增強 doWait：結束回合後切回骰子頁
+   ================================================ */
+const _origWait = game.doWait.bind(game);
+game.doWait = function() {
+    _origWait();
+    switchScreen('dice');
+};
+
+/* ================================================
+   覆寫 update：同時更新骰子頁狀態
+   ================================================ */
+const _origUpdate = game.update.bind(game);
+game.update = function() {
+    try { _origUpdate(); } catch(e) { /* ignore */ }
+
+    const pts = this.pts;
+    const ptsStr = pts !== null ? '⚡ ' + pts + ' 點' : '⚡ -- 點';
+
+    // 狀態列
+    const curPtsEl = document.getElementById('cur-pts');
+    if (curPtsEl) curPtsEl.textContent = ptsStr;
+    const tabPtsEl = document.getElementById('tab-pts-hint');
+    if (tabPtsEl) tabPtsEl.textContent = pts !== null ? pts + ' 點' : '-- 點';
+    const ptsHintEl = document.getElementById('pts-hint-move');
+    if (ptsHintEl) ptsHintEl.textContent = ptsStr;
+
+    // D-Pad 中心顯示
+    const dpadPtsEl = document.getElementById('dpad-pts');
+    if (dpadPtsEl) dpadPtsEl.textContent = pts !== null ? '⚡' + pts : '⚡?';
+
+    // 按鈕狀態
+    const hasPts = pts !== null && pts > 0;
+    const btnAttack = document.getElementById('btn-attack');
+    const btnItem = document.getElementById('btn-item');
+    const btnEnd = document.getElementById('btn-end');
+    const btnRoll = document.getElementById('btn-roll');
+    if (btnAttack) btnAttack.disabled = !hasPts;
+    if (btnItem) btnItem.disabled = !hasPts || pts < 2;
+    if (btnEnd) btnEnd.disabled = pts === null;
+    if (btnRoll) btnRoll.disabled = pts !== null;
+    // 地圖上的 icon 按鈕也要同步 disabled
+    const btnAttackMap = document.getElementById('btn-attack-map');
+    const btnItemMap = document.getElementById('btn-item-map');
+    if (btnAttackMap) btnAttackMap.disabled = !hasPts;
+    if (btnItemMap) btnItemMap.disabled = !hasPts || pts < 2 || p.inv.length === 0;
+
+    // Affordable highlighting
+    document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('affordable'));
+    if (pts >= 1) {
+        if (btnAttack) btnAttack.classList.add('affordable');
+        if (btnEnd) btnEnd.classList.add('affordable');
+    }
+    if (pts >= 2) {
+        if (btnItem) btnItem.classList.add('affordable');
+    }
+
+    // 控制面板上的行動點顯示
+    const ctrlPts = document.getElementById('ctrl-pts-display');
+    if (ctrlPts) ctrlPts.textContent = pts !== null ? '⚡ ' + pts + ' 點' : '⚡ -- 點';
+
+    // 行動點耗盡醒目標語橫幅
+    const banner = document.getElementById('turn-over-banner');
+    if (banner) {
+        if (pts !== null && pts <= 0) {
+            banner.classList.add('show');
+        } else {
+            banner.classList.remove('show');
+        }
+    }
+};
+
+/* ================================================
+   控制面板固定展開，移除收合機制
+   ================================================ */
+
+/* ================================================
+   教學互動指向系統
+   ================================================ */
+let _tutPointer = null;
+let _tutHighlightEl = null;
+function showTutPointer(targetId, offsetX, offsetY) {
+    hideTutPointer();
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    let ptr = document.getElementById('tut-pointer');
+    if (!ptr) {
+        ptr = document.createElement('div');
+        ptr.id = 'tut-pointer';
+        ptr.textContent = '👉';
+        document.body.appendChild(ptr);
+    }
+    ptr.classList.add('show');
+    _tutPointer = ptr;
+    _tutHighlightEl = target;
+    target.classList.add('tut-highlight-gold');
+    positionTutPointer(targetId, offsetX, offsetY);
+}
+function positionTutPointer(targetId, offsetX, offsetY) {
+    const ptr = document.getElementById('tut-pointer');
+    const target = document.getElementById(targetId);
+    if (!ptr || !target) return;
+    const r = target.getBoundingClientRect();
+    const ox = offsetX || 0, oy = offsetY || 0;
+    ptr.style.left = (r.left + r.width / 2 + ox - 14) + 'px';
+    ptr.style.top = (r.top + oy - 10) + 'px';
+}
+function hideTutPointer() {
+    const ptr = document.getElementById('tut-pointer');
+    if (ptr) { ptr.classList.remove('show'); ptr.style.display = 'none'; }
+    if (_tutHighlightEl) {
+        _tutHighlightEl.classList.remove('tut-highlight-gold');
+        _tutHighlightEl = null;
+    }
+    // 清除所有高亮
+    document.querySelectorAll('.tut-highlight-gold').forEach(el => el.classList.remove('tut-highlight-gold'));
+}
+function highlightTutTile(x, y) {
+    hideTutPointer();
+    const grid = document.getElementById('map-grid');
+    if (!grid) return;
+    const tile = grid.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+    if (tile) {
+        tile.classList.add('tut-highlight-gold');
+        _tutHighlightEl = tile;
+        // 在瓷磚上方顯示箭頭
+        let ptr = document.getElementById('tut-pointer');
+        if (!ptr) {
+            ptr = document.createElement('div');
+            ptr.id = 'tut-pointer';
+            ptr.textContent = '👉';
+            document.body.appendChild(ptr);
+        }
+        ptr.classList.add('show');
+        _tutPointer = ptr;
+        const r = tile.getBoundingClientRect();
+        ptr.style.left = (r.left + r.width / 2 - 14) + 'px';
+        ptr.style.top = (r.top - 20) + 'px';
+    }
+}
+
+// 教學模式下：更新當前步驟的指向
+function updateTutPointer() {
+    hideTutPointer();
+    if (!tutorial || !tutorial.active) return;
+    const step = tutorial.step;
+    // step 0: intro modal (在 game.js 中已處理)
+    // step 1: 骰子頁 -> 指向 btn-roll
+    if (step === 1) { showTutPointer('btn-roll', 0, 60); return; }
+    // step 2: 移動頁 -> 指向 dpad-down (敵人在正下方)
+    if (step === 2) { showTutPointer('dpad-down', 0, 40); return; }
+    // step 3: 攻擊 -> 指向攻擊按鈕
+    if (step === 3) { showTutPointer('btn-attack', 30, 40); return; }
+    // step 4: 道具（走到道具位置）-> 繼續指向 dpad-down
+    if (step === 4) { showTutPointer('dpad-down', 0, 40); return; }
+    // step 5: 結束回合 -> 指向 btn-end
+    if (step === 5) { showTutPointer('btn-end', 0, 40); return; }
+    // step 5: 階梯 -> 指向地圖上的階梯瓷磚
+    if (step === 5) {
+        // 階梯在 (3,4)
+        setTimeout(() => highlightTutTile(3, 4), 100);
+        return;
+    }
+}
+</script>
+</body>
+</html>

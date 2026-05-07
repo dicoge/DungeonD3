@@ -1,0 +1,64 @@
+{
+  "lore": [
+    {
+      "id": "world_origin",
+      "title": "The Age of Ascension",
+      "content": "In the First Age, the gods walked among mortals. They raised empires of gold and light, sharing fragments of their power with chosen champions. But the gods grew jealous, and war tore heaven itself apart. The surviving deities retreated to realms beyond mortal sight, leaving behind dungeons filled with their discarded power and the monsters born from divine blood.",
+      "unlocks_at": "game_start"
+    },
+    {
+      "id": "dungeon_d3_history",
+      "title": "The DungeonD3 Prophecy",
+      "content": "Ancient texts speak of DungeonD3: a labyrinth that exists between worlds, its depths stretching into infinity. Each generation, heroes descend, seeking glory, power, or simply survival. Few return. Fewer still understand what they truly face—the sealed prisons of gods themselves, waiting for the day the seal breaks.",
+      "unlocks_at": "floor_1_complete"
+    },
+    {
+      "id": "the_lich_backstory",
+      "title": "The Fall of King Aldric",
+      "content": "King Aldric VII was the wisest ruler the Kingdom of Valdris had ever known. When plague threatened his people, he sought a cure in forbidden magic. He found something else: the secret of immortality. He transferred his soul into an arcane vessel, becoming the first Lich. But power corrupted him absolutely. Now he rules the Shadow Realm as the Lich King, his kingdom built on the bones of his former subjects.",
+      "unlocks_at": "boss_defeated"
+    },
+    {
+      "id": "faction_order_of_light",
+      "title": "The Order of Light",
+      "content": "Founded during the Second Age by survivors of the divine war, the Order of Light seeks to seal away all creatures of darkness. Their templars train from childhood in the arts of holy combat. Their shrines, scattered throughout dungeons, offer blessings to those who prove themselves worthy—and curses to the corrupt.",
+      "unlocks_at": "first_shrine"
+    },
+    {
+      "id": "faction_cult_of_shadows",
+      "title": "The Cult of Endless Night",
+      "content": "A secretive organization that worships the Lich King as a god-incarnate. They believe death is merely a transition to eternal service in the Shadow Realm. Cultists infiltrate towns near dungeon entrances, sacrificing travelers to earn their master's favor. They leave arcane markers that warn lesser creatures away from chosen prey.",
+      "unlocks_at": "first_cultist"
+    },
+    {
+      "id": "artifact_lore_vorpal_blade",
+      "title": "The Vorpal Blade Legends",
+      "content": "Bards sing of a sword that can sever souls: the Vorpal Blade. It was forged in the fires of Mount Calvius by a dying blacksmith god, its edge sharp enough to cut through reality itself. Legends claim it can kill immortals. The last known location was the treasure vault of the Lich King himself.",
+      "unlocks_at": "first_epic_item"
+    },
+    {
+      "id": "ancient_civilization",
+      "title": "The Mithril Empire",
+      "content": "Before the current age, the Mithril Empire stretched across the known world. Their technology was millennia ahead of modern smithing—their automatons still walk the dungeons, performing duties from an ancient programming that no one alive can read. Their fall came suddenly: a single cataclysmic night when their capital city sank beneath the earth. Only their machines survived.",
+      "unlocks_at": "floor_4_complete"
+    },
+    {
+      "id": "demon_realm_explanation",
+      "title": "The Demon Pit Origins",
+      "content": "The Demon Pit is not a natural formation but a wound in reality—a place where the barrier between the mortal world and the Demon Realm grew thin during the divine war. Lesser demons leak through constantly, but occasionally something larger claws its way up. The demons serve no master; they simply hunger.",
+      "unlocks_at": "floor_3_complete"
+    },
+    {
+      "id": "player_hero_origin",
+      "title": "The Hero's Call",
+      "content": "You are one of many who answered the ancient summons. Legends speak of a prophecy that a hero would someday descend into DungeonD3 and emerge victorious from its deepest floor—bringing back artifacts of immense power that could reshape the world. Most who hear the call think themselves heroes. Few truly are.",
+      "unlocks_at": "game_start"
+    },
+    {
+      "id": "ending_possibilities",
+      "title": "Fates Yet Unwritten",
+      "content": "Multiple endings await in DungeonD3, depending on player choices and accomplishments. The True Hero's Ending sees the seal on the dungeon made permanent. The Dark Champion's Ending involves becoming the Lich King's successor. The Merchant Prince Ending requires finding all hidden treasure rooms. Only the most skilled adventurers discover that even death is not always the end in the dungeon's eternal depths.",
+      "unlocks_at": "90_percent_complete"
+    }
+  ]
+}
