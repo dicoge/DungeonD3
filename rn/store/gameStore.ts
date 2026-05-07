@@ -223,6 +223,7 @@ interface GameStore extends GameState {
   diceValue: number | null;
   isRolling: boolean;
   movePoints: number;
+  hasRolledThisTurn: boolean; // 防止本回合重複骰
 
   // 教學系統
   tutorialStep: number;
@@ -280,12 +281,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   diceValue: null,
   isRolling: false,
   movePoints: 0,
+  hasRolledThisTurn: false,
   tutorialStep: 0,
   tutorialDone: false,
   currentEnemy: null,
   shopAvailable: false,
 
   rollDice: () => {
+    const { hasRolledThisTurn, movePoints } = get();
+    // 已經骰過了，或行動點還沒用完，不能再骰
+    if (hasRolledThisTurn || movePoints > 0) return;
     set({ isRolling: true });
     setTimeout(() => {
       const value = Math.floor(Math.random() * 20) + 1;
@@ -294,6 +299,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         diceValue: value,
         isRolling: false,
         movePoints,
+        hasRolledThisTurn: true, // 標記本回合已骰
       });
     }, 1500);
   },
@@ -332,6 +338,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       diceValue: null,
       isRolling: false,
       movePoints: 0,
+      hasRolledThisTurn: false,
       tutorialStep: 0,
       tutorialDone: false,
       currentEnemy: null,
@@ -378,7 +385,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   useMovePoint: () => {
     const { movePoints } = get();
     if (movePoints > 0) {
-      set({ movePoints: movePoints - 1 });
+      const newPts = movePoints - 1;
+      set({ movePoints: newPts });
+      // 行動點用完，回合結束，可以再骰
+      if (newPts === 0) {
+        set({ hasRolledThisTurn: false, diceValue: null });
+      }
     }
   },
 

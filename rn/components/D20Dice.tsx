@@ -9,6 +9,7 @@ interface D20DiceProps {
   value: number | null;
   isRolling: boolean;
   onRoll: () => void;
+  disabled?: boolean;
 }
 
 const SIZE = 220;
@@ -72,7 +73,7 @@ function centerTrianglePoints(): string {
   return pts.join(' ');
 }
 
-export default function D20Dice({ value, isRolling, onRoll }: D20DiceProps) {
+export default function D20Dice({ value, isRolling, onRoll, disabled }: D20DiceProps) {
   const spinValue = useRef(new Animated.Value(0)).current;
   const [displayValue, setDisplayValue] = useState<number>(1);
 
@@ -162,13 +163,13 @@ export default function D20Dice({ value, isRolling, onRoll }: D20DiceProps) {
       </Animated.View>
 
       <TouchableOpacity
-        style={[styles.rollButton, isRolling && styles.rollButtonDisabled]}
+        style={[styles.rollButton, (isRolling || disabled) && styles.rollButtonDisabled]}
         onPress={onRoll}
-        disabled={isRolling}
+        disabled={isRolling || disabled}
         activeOpacity={0.7}
       >
         <Animated.Text style={styles.rollText}>
-          {isRolling ? '滾動中...' : '🎲 擲骰'}
+          {isRolling ? '滾動中...' : disabled ? '⏳ 等待回合結束...' : '🎲 擲骰'}
         </Animated.Text>
       </TouchableOpacity>
     </View>

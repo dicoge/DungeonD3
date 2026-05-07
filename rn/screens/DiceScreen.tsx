@@ -9,7 +9,7 @@ import { useGameStore, TUTORIAL_STEPS } from '../store/gameStore';
 import { SFX } from '../services/audio';
 
 export default function DiceScreen() {
-  const { diceValue, isRolling, rollDice, player, floor, movePoints } = useGameStore();
+  const { diceValue, isRolling, rollDice, player, floor, movePoints, hasRolledThisTurn } = useGameStore();
   const tutorialStep = useGameStore(s => s.tutorialStep);
   const tutorialDone = useGameStore(s => s.tutorialDone);
 
@@ -18,8 +18,15 @@ export default function DiceScreen() {
     rollDice();
   };
 
+  // 可以骰的條件：還沒骰過 + 行動點已歸零（上一回合結束）
+  const canRoll = !hasRolledThisTurn && movePoints === 0 && !isRolling;
+
   // 根據骰值給予提示
   const getHint = () => {
+    // 回合進行中，禁止骰
+    if (hasRolledThisTurn) {
+      return '⚔️ 回合進行中 — 消耗完行動點才能再骰！';
+    }
     if (diceValue === null) {
       if (!tutorialDone && tutorialStep < TUTORIAL_STEPS.length) {
         return TUTORIAL_STEPS[tutorialStep].content.split('\n')[0];
@@ -73,6 +80,7 @@ export default function DiceScreen() {
           value={diceValue}
           isRolling={isRolling}
           onRoll={handleRoll}
+          disabled={!canRoll}
         />
 
         {/* 骰值結果 */}
