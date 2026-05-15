@@ -671,6 +671,11 @@ if (!this.load()) this.new();
         p.xp += en.xpR||10;
         // P1-4: 顯示獲得 XP 浮動文字
         this.showFloat('+'+en.xpR+' XP', '#aa88ff', en.x, en.y);
+        // 敵人掉落金幣
+        const goldDrop = 10 + Math.floor(Math.random() * 21); // 10-30 gold
+        p.gold += goldDrop;
+        this.showFloat('+'+goldDrop+' 💰', '#ffd700', en.x, en.y);
+        this.log('💰 擊敗 '+en.name+'，獲得 '+goldDrop+' 金幣！','action');
         this.checkLvl();
       }
     }
@@ -737,6 +742,145 @@ if (!this.load()) this.new();
     this.pts=null;
     this.genFloor();
     this.render(); this.update();
+    // 顯示商店畫面（不打斷遊戲流程，shopShown 回呼後再升級）
+    this.showShop();
+  }
+
+  // ============================================================
+  // 商店系統
+  // ============================================================
+  showShop() {
+    // 教學關卡不顯示商店
+    if (this.s.floor <= 1) {
+      this.showUpgrade();
+      return;
+    }
+    const shopItems = this.generateShopItems();
+    this._shopItems = shopItems;
+
+    const list = document.getElementById('shop-list');
+    list.innerHTML = '';
+    shopItems.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'shop-card';
+      const canAfford = this.s.p.gold >= item.price;
+      div.innerHTML = `
+        <div class="shop-item-icon">${item.icon}</div>
+        <div class="shop-item-name">${item.name}</div>
+        <div class="shop-item-desc">${item.desc}</div>
+        <div class="shop-item-price ${canAfford ? '' : 'cannot-afford'}">💰 ${item.price}</div>
+      `;
+      div.style.opacity = canAfford ? '1' : '0.5';
+      div.onclick = () => {
+        if (!canAfford) { this.toast('金幣不足！'); return; }
+        this.buyShopItem(idx);
+      };
+      list.appendChild(div);
+    });
+
+    document.getElementById('shop-gold').textContent = this.s.p.gold;
+    document.getElementById('shop-modal').classList.add('show');
+  }
+
+  generateShopItems() {
+    const items = [];
+    const p = this.s.p;
+
+    // 固定商品：生命藥水（性價比最高）
+    items.push({
+      id: 'shop_health_potion',
+      icon: '❤️',
+      name: '生命藥水',
+      desc: '恢復 30 HP',
+      price: 15,
+      type: 'heal',
+      effect: { heal: 30 }
+    });
+
+    // 固定商品：攻擊強化（臨時 buff，持續到下層）
+    items.push({
+      id: 'shop_atk_boost',
+      icon: '⚔️',
+      name: '攻擊強化',
+      desc: '攻擊力 +5（永久）',
+      price: 30,
+      type: 'buff',
+      effect: { atk: 5 }
+    });
+
+    // 固定商品：防禦強化（臨時 buff，持續到下層）
+    items.push({
+      id: 'shop_def_boost',
+      icon: '🛡️',
+      name: '防禦強化',
+      desc: '防禦力 +3（永久）',
+      price: 25,
+      type: 'buff',
+      effect: { def: 3 }
+    });
+
+    // 隨機商品：神秘卡片（從 DB.items 隨機選一個）
+    const allItems = Object.values(DB.items);
+    if (allItems.length > 0) {
+      const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
+      const price = randomItem.cost || 20;
+      items.push({
+        id: 'shop_mystery_' + randomItem.id,
+        icon: randomItem.icon || '🎁',
+        name: '神秘卡片',
+        desc: '隨機獲得：' + randomItem.name,
+        price: Math.max(10, Math.floor(price * 0.8)),
+        type: 'mystery',
+        mysteryItem: randomItem
+      });
+    }
+
+    return items;
+  }
+
+  buyShopItem(idx) {
+    const item = this._shopItems[idx];
+    if (!item) return;
+    const p = this.s.p;
+
+    if (p.gold < item.price) {
+      this.toast('金幣不足！');
+      return;
+    }
+
+    p.gold -= item.price;
+
+    switch (item.type) {
+      case 'heal':
+        p.hp = Math.min(p.maxHp, p.hp + item.effect.heal);
+        this.log('❤️ 購買 ' + item.name + '，恢復 ' + item.effect.heal + ' HP！', 'heal');
+        SFX.pickup();
+        break;
+      case 'buff':
+        if (item.effect.atk) p.atk += item.effect.atk;
+        if (item.effect.def) p.def += item.effect.def;
+        this.log('✨ 購買 ' + item.name + '！', 'action');
+        SFX.levelUp();
+        break;
+      case 'mystery':
+        if (item.mysteryItem) {
+          p.inv.push({ ...item.mysteryItem });
+          this.log('🎁 購買神秘卡片，獲得 ' + item.mysteryItem.name + '！', 'item');
+          SFX.pickup();
+        }
+        break;
+    }
+
+    // 標記已購買
+    this._shopItems[idx] = null;
+    document.getElementById('shop-gold').textContent = p.gold;
+    this.update();
+    this.toast('購買成功！');
+  }
+
+  closeShop() {
+    document.getElementById('shop-modal').classList.remove('show');
+    // 關閉商店後顯示升級選擇
     this.showUpgrade();
   }
 

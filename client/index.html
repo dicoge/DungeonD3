@@ -404,6 +404,33 @@
         .tier-3 { background: var(--cyan); color: #000; }
         .tier-4 { background: #7b1fa2; color: #fff; }
 
+        /* 商店 */
+        .shop-modal-box { border-color: var(--gold) !important; }
+        .shop-modal-box h2 { color: var(--gold) !important; }
+        #shop-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .shop-card {
+            background: #0a0a14;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .shop-card:hover { border-color: var(--gold); transform: scale(1.02); }
+        .shop-card .shop-item-icon { font-size: 2em; margin-bottom: 4px; }
+        .shop-card .shop-item-name { color: var(--text); font-size: 0.85em; font-weight: bold; margin-bottom: 3px; }
+        .shop-card .shop-item-desc { color: var(--muted); font-size: 0.7em; margin-bottom: 6px; }
+        .shop-card .shop-item-price { color: var(--gold); font-size: 0.9em; font-weight: bold; }
+        .shop-card .shop-item-price.cannot-afford { color: var(--red); }
+
         /* Boss */
         .boss-modal-box { border-color: #ff4444 !important; }
         .boss-modal-box h2 { color: #ff4444 !important; }
@@ -627,6 +654,17 @@
         <h2>⬆️ 樓層通關！</h2>
         <p>選擇一項永久強化：</p>
         <div id="upgrade-list"></div>
+    </div>
+</div>
+
+<!-- 商店彈窗 -->
+<div class="modal" id="shop-modal">
+    <div class="modal-box shop-modal-box">
+        <h2>🏪 商店</h2>
+        <p style="color:var(--gold);font-size:1em;margin-bottom:8px;">💰 金幣：<span id="shop-gold">0</span></p>
+        <p style="color:var(--muted);font-size:0.8em;margin-bottom:12px;">擊敗敵人獲得金幣，在商店購買道具！</p>
+        <div id="shop-list"></div>
+        <button class="modal-btn" onclick="game.closeShop()">跳過，直接繼續 ➡️</button>
     </div>
 </div>
 
