@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { GameState, Player, Enemy, Item, DungeonMap } from '../types';
+import { SFX } from '../services/audio';
 
 // 攻擊骰
 function d20(): number {
@@ -113,7 +114,7 @@ function generateDungeon(): DungeonMap {
 
 // 敵人資料（樓層加成）
 const FLOOR_MULTIPLIER: Record<string, number> = {
-  '1-3': 1.0, '4-6': 1.3, '7-9': 1.6, '10-14': 2.0, '15': 3.0,
+  '1-3': 1.0, '4-6': 1.3, '7-9': 1.6, '10-14': 2.0, '15': 2.0,
 };
 
 const BASE_ENEMIES: Omit<Enemy, 'currentHp'>[] = [
@@ -125,7 +126,9 @@ const BASE_ENEMIES: Omit<Enemy, 'currentHp'>[] = [
   { id: 'orc', name: '獸人', icon: '👹', floor: 2, hp: 60, damage: 12, def: 4, xp_reward: 22, rarity: 'common' },
   { id: 'troll', name: '巨魔', icon: '🧌', floor: 3, hp: 100, damage: 18, def: 8, xp_reward: 40, rarity: 'uncommon' },
   { id: 'dragon_spawn', name: '幼龍', icon: '🐉', floor: 4, hp: 200, damage: 30, def: 15, xp_reward: 80, rarity: 'rare' },
-  { id: 'floor1_boss', name: '深淵領主', icon: '👿', floor: 5, hp: 300, damage: 25, def: 10, xp_reward: 150, rarity: 'boss' },
+  { id: '5_boss', name: '深淵領主', icon: '👿', floor: 5, hp: 300, damage: 25, def: 10, xp_reward: 150, rarity: 'boss' },
+  { id: '10_boss', name: '深淵將軍', icon: '👹', floor: 10, hp: 500, damage: 35, def: 18, xp_reward: 300, rarity: 'boss' },
+  { id: '15_boss', name: '暗黑龍王', icon: '🐲', floor: 15, hp: 400, damage: 45, def: 25, xp_reward: 500, rarity: 'boss' },
 ];
 
 function getFloorMultiplier(floor: number): number {
@@ -169,7 +172,7 @@ function spawnEnemiesForFloor(floor: number): Enemy[] {
 const BASE_ITEMS: Item[] = [
   { id: 'health_potion', name: '生命藥水', icon: '❤️', type: 'consumable', rarity: 'common', effect: { heal: 30 }, cost: 15 },
   { id: 'bomb', name: '炸彈', icon: '💣', type: 'consumable', rarity: 'uncommon', effect: { damage: 40 }, cost: 30 },
-  { id: 'fire_scroll', name: '火球卷軸', icon: '📜', type: 'consumable', rarity: 'uncommon', effect: { damage: 35 }, cost: 35 },
+  { id: 'fire_scroll', name: '火球卷軸', icon: '📜', type: 'consumable', rarity: 'uncommon', effect: { damage: 35 }, cost: 25 },
   { id: 'strength_buff', name: '力量藥劑', icon: '💪', type: 'consumable', rarity: 'rare', effect: { atk_buff: 5, duration: 3 }, cost: 50 },
   { id: 'iron_sword', name: '鐵劍', icon: '⚔️', type: 'weapon', rarity: 'common', effect: { atk: 5 }, cost: 50 },
   { id: 'steel_sword', name: '鋼鐵劍', icon: '🗡️', type: 'weapon', rarity: 'uncommon', effect: { atk: 10 }, cost: 100 },
@@ -179,38 +182,47 @@ const BASE_ITEMS: Item[] = [
 ];
 
 // ============================================================
-// Tutorial Steps
+// Tutorial Steps — 互動引導式教學
+// 每一步引導玩家操作 UI 元素，自動進度，無跳過按鈕
 // ============================================================
+export type TutorialHighlight = 'ROLL_DICE' | 'MOVE_TILE' | 'ATTACK_BTN' | 'USE_ITEM' | null;
+
 export const TUTORIAL_STEPS = [
   {
     id: 'welcome',
     title: '歡迎來到地城！',
-    content: '我是你的嚮導 🧙‍♂️\n跟著我一步步學習，成為真正的冒險者！',
-    action: null,
+    content: '我是你的嚮導 🧙‍♂️\n點擊下方按鈕，開始你的冒險之旅！',
+    highlight: null as TutorialHighlight,
   },
   {
-    id: 'dice_intro',
-    title: '🎲 認識 D20 骰子',
-    content: 'D20 骰子是命運的象徵！\n\n每次擲骰，你會獲得「行動點數」用來移動。\n骰值越高，行動點數越多！\n\n• 1-3 點 → 1 行動點\n• 4-6 點 → 2 行動點\n• 7-9 點 → 3 行動點\n• 10-12 點 → 4 行動點\n• ...以此類推',
-    action: 'ROLL_DICE',
+    id: 'roll_dice',
+    title: '🎲 擲出命運之骰',
+    content: '點擊發光的骰子按鈕來擲骰！\n骰值越高，行動點數越多！',
+    highlight: 'ROLL_DICE' as TutorialHighlight,
   },
   {
-    id: 'map_intro',
-    title: '🗺️ 認識地圖',
-    content: '地圖顯示整個地城的結構！\n\n🧙 = 你\n🚪 = 樓梯（通往下一層）\n▓ = 牆壁（不能走）\n· = 地板（可以走）\n\n用方向鍵移動，每走一步消耗 1 行動點。\n行動點用完後，你會自動結束回合。',
-    action: 'MOVE_PLAYER',
+    id: 'move_player',
+    title: '🗺️ 踏出第一步',
+    content: '點擊發光的格子來移動角色！\n每走一步消耗 1 行動點。',
+    highlight: 'MOVE_TILE' as TutorialHighlight,
   },
   {
-    id: 'battle_intro',
-    title: '⚔️ 戰鬥教學',
-    content: '遭遇敵人了！\n\n戰鬥使用 D20 系統：\n• D20 = 1 → Miss（攻擊失敗）\n• D20 + ATK > 敵人DEF → 命中！\n• D20 = 20 → 暴擊！2倍傷害！\n\n按「攻擊」按鈕開始戰鬥！',
-    action: 'ATTACK_ENEMY',
+    id: 'attack_enemy',
+    title: '⚔️ 戰鬥！',
+    content: '點擊發光的攻擊按鈕來戰鬥！\n打倒敵人前進吧！',
+    highlight: 'ATTACK_BTN' as TutorialHighlight,
   },
   {
-    id: 'done',
-    title: '準備出發！',
-    content: '恭喜完成新手教學！\n\n🏆 目標：通過 15 層地城\n👿 每 5 層會遇到 Boss\n💰 收集金幣購買道具\n\n記得使用背包裡的道具強化自己！',
-    action: null,
+    id: 'use_item',
+    title: '🎒 使用道具',
+    content: '打開背包，點擊「使用」按鈕\n用生命藥水恢復 HP！',
+    highlight: 'USE_ITEM' as TutorialHighlight,
+  },
+  {
+    id: 'complete',
+    title: '開始冒險！',
+    content: '準備好了嗎？\n前往 15 層地城，擊敗所有敵人！',
+    highlight: null as TutorialHighlight,
   },
 ];
 
@@ -228,6 +240,7 @@ interface GameStore extends GameState {
   // 教學系統
   tutorialStep: number;
   tutorialDone: boolean;
+  tutorialHighlight: TutorialHighlight;
   completeTutorialStep: (stepId: string) => void;
 
   // 初始化
@@ -263,6 +276,16 @@ interface GameStore extends GameState {
 
   // 存檔
   saveGame: () => Promise<void>;
+
+  // --- UI State (手機格式覆蓋層) ---
+  activeTab: 'dice' | 'map';
+  showShop: boolean;
+  showInventory: boolean;
+  setActiveTab: (tab: 'dice' | 'map') => void;
+  openShop: () => void;
+  closeShop: () => void;
+  openInventory: () => void;
+  closeInventory: () => void;
 }
 
 // ============================================================
@@ -284,8 +307,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   hasRolledThisTurn: false,
   tutorialStep: 0,
   tutorialDone: false,
+  tutorialHighlight: null,
   currentEnemy: null,
   shopAvailable: false,
+
+  // UI state
+  activeTab: 'dice',
+  showShop: false,
+  showInventory: false,
+  isLoading: false,
 
   rollDice: () => {
     const { hasRolledThisTurn, movePoints } = get();
@@ -306,12 +336,71 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   completeTutorialStep: (stepId: string) => {
     const { tutorialStep } = get();
-    const nextStep = tutorialStep + 1;
+    const currentStepIndex = TUTORIAL_STEPS.findIndex(s => s.id === stepId);
+    if (currentStepIndex === -1) return;
+
+    const nextStep = currentStepIndex + 1;
     if (nextStep >= TUTORIAL_STEPS.length) {
-      set({ tutorialStep: TUTORIAL_STEPS.length - 1, tutorialDone: true });
-    } else {
-      set({ tutorialStep: nextStep });
+      set({ tutorialStep: TUTORIAL_STEPS.length - 1, tutorialDone: true, tutorialHighlight: null });
+      return;
     }
+
+    const nextStepId = TUTORIAL_STEPS[nextStep].id;
+    const nextHighlight = TUTORIAL_STEPS[nextStep].highlight;
+
+    // Setup state for the next step
+    switch (nextStepId) {
+      case 'roll_dice':
+        // Ensure dice is rollable (reset turn state)
+        set({
+          hasRolledThisTurn: false,
+          movePoints: 0,
+          diceValue: null,
+        });
+        break;
+      case 'move_player':
+        // Switch to map tab, ensure player has move points
+        set({
+          activeTab: 'map',
+          movePoints: Math.max(1, get().movePoints),
+        });
+        break;
+      case 'attack_enemy':
+        // Ensure there's an enemy and move points for attack
+        if (get().enemies.length === 0) {
+          // Add a weak enemy if none exist
+          const weakEnemy = {
+            id: 'tutorial_slime',
+            name: '弱小的史萊姆',
+            icon: '🟢',
+            floor: 1,
+            hp: 15,
+            damage: 3,
+            def: 1,
+            xp_reward: 5,
+            rarity: 'common' as const,
+            currentHp: 15,
+          };
+          set({ enemies: [weakEnemy] });
+        }
+        set({ movePoints: Math.max(1, get().movePoints) });
+        break;
+      case 'use_item':
+        // Give a health potion if player doesn't have one, open inventory
+        const player = get().player;
+        const hasPotion = player.inv.some(i => i.id === 'health_potion');
+        if (!hasPotion) {
+          const newInv = [...player.inv, { id: 'health_potion', name: '生命藥水', icon: '❤️', type: 'consumable' as const, rarity: 'common' as const, effect: { heal: 30 }, cost: 15, quantity: 1 }];
+          set({ player: { ...player, inv: newInv } });
+        }
+        set({ showInventory: true });
+        break;
+      case 'complete':
+        set({ showInventory: false });
+        break;
+    }
+
+    set({ tutorialStep: nextStep, tutorialHighlight: nextHighlight });
   },
 
   initGame: () => {
@@ -337,25 +426,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
       boss: null,
       diceValue: null,
       isRolling: false,
+      isLoading: false,
       movePoints: 0,
       hasRolledThisTurn: false,
       tutorialStep: 0,
       tutorialDone: false,
+      tutorialHighlight: null,
       currentEnemy: null,
       shopAvailable: false,
     });
   },
 
   loadGame: async () => {
+    set({ isLoading: true });
     try {
       const data = await AsyncStorage.getItem('dungeonD3_save');
       if (data) {
         const saved = JSON.parse(data);
-        set({ ...saved, isRolling: false, currentEnemy: null });
+        set({ ...saved, isLoading: false, isRolling: false, currentEnemy: null });
         return true;
       }
+      set({ isLoading: false });
       return false;
     } catch {
+      set({ isLoading: false });
       return false;
     }
   },
@@ -378,7 +472,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       get().nextFloor();
     }
 
-    set({ player: newPlayer });
+    set({ player: newPlayer, movePoints: movePoints - 1 });
     return true;
   },
 
@@ -440,14 +534,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // 升級檢查
     if (newPlayer.xp >= newPlayer.xpN) {
+      const newMaxHp = newPlayer.maxHp + 10;
       newPlayer = {
         ...newPlayer,
         lvl: newPlayer.lvl + 1,
         xp: newPlayer.xp - newPlayer.xpN,
         xpN: Math.floor(newPlayer.xpN * 1.5),
-        maxHp: newPlayer.maxHp + 10,
+        maxHp: newMaxHp,
         atk: newPlayer.atk + 2,
-        hp: Math.min(newPlayer.maxHp + 10, newPlayerHp),
+        hp: Math.min(player.hp + 10, newMaxHp),
       };
     }
 
@@ -455,8 +550,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       e.id === currentEnemy.id ? { ...e, currentHp: Math.max(0, newEnemyHp) } : e
     ).filter(e => e.currentHp > 0);
 
-    const over = newPlayerHp <= 0;
-    const win = get().floor >= 15 && newEnemies.length === 0 && !get().boss;
+    const tutorialProtect = !get().tutorialDone && newPlayerHp <= 0;
+    let over = newPlayerHp <= 0;
+    const win = get().floor >= 15 && newEnemies.length === 0;
+
+    // 教學模式保護：玩家歸零時自動復活半血，不觸發 Game Over
+    if (tutorialProtect) {
+      newPlayer = {
+        ...newPlayer,
+        hp: Math.floor(newPlayer.maxHp / 2),
+      };
+      over = false;
+    }
 
     set({
       player: newPlayer,
@@ -466,21 +571,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
       win,
     });
 
+    get().saveGame();
     return { result, playerHit };
   },
 
   skipEnemy: () => {
-    const { enemies } = get();
-    set({ currentEnemy: null });
+    const { enemies, currentEnemy } = get();
+    if (!currentEnemy) return;
+    const newEnemies = enemies.filter(e => e.id !== currentEnemy.id);
+    set({ currentEnemy: null, enemies: newEnemies });
   },
 
   useItem: (itemId) => {
-    const { player } = get();
+    const { player, currentEnemy, enemies } = get();
     const item = player.inv.find(i => i.id === itemId);
     if (!item) return;
 
-    let newPlayer = { ...player };
+    // Potion spam prevention: if healing item and already at full HP, return early
     const healVal = item.effect.heal;
+    if (typeof healVal === 'number' && player.hp >= player.maxHp) {
+      return;
+    }
+
+    let newPlayer = { ...player };
+    let newEnemyHp = currentEnemy ? currentEnemy.currentHp : 0;
+    let newEnemies = [...enemies];
     if (typeof healVal === 'number') {
       newPlayer = { ...newPlayer, hp: Math.min(newPlayer.maxHp, newPlayer.hp + healVal) };
     }
@@ -488,8 +603,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (typeof atkBuffVal === 'number') {
       newPlayer = { ...newPlayer, atk: newPlayer.atk + atkBuffVal };
     }
-    if (item.effect.damage) {
-      // 炸彈之類直接造成傷害（需要目標）
+    if (item.effect.damage && currentEnemy) {
+      // 炸彈之類直接造成傷害到敵人
+      const dmg = typeof item.effect.damage === 'number' ? item.effect.damage : 0;
+      newEnemyHp = Math.max(0, currentEnemy.currentHp - dmg);
+      newEnemies = enemies.map(e =>
+        e.id === currentEnemy.id ? { ...e, currentHp: newEnemyHp } : e
+      ).filter(e => e.currentHp > 0);
     }
 
     const newInv = player.inv
@@ -497,7 +617,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
       .filter(i => i.quantity > 0);
     newPlayer = { ...newPlayer, inv: newInv };
 
-    set({ player: newPlayer });
+    set({
+      player: newPlayer,
+      enemies: newEnemies,
+      currentEnemy: newEnemyHp > 0 && currentEnemy ? { ...currentEnemy, currentHp: newEnemyHp } : null,
+    });
+
+    // 使用道具消耗 2 MOVE 並結束回合
+    const mp = get().movePoints;
+    const newMp = Math.max(0, mp - 2);
+    set({ movePoints: newMp });
+    if (newMp === 0) {
+      set({ hasRolledThisTurn: false, diceValue: null });
+    }
+
+    get().saveGame();
   },
 
   buyItem: (itemId) => {
@@ -520,6 +654,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     set({ player: newPlayer, items: items.filter(i => i.id !== itemId) });
+    SFX.buy();
+    get().saveGame();
   },
 
   equipItem: (itemId, slot) => {
@@ -565,9 +701,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
 
     if (slot === 'w') {
-      newPlayer.atk = 5 + getDefBonus(player.eq.a || { effect: {} });
+      newPlayer.atk = 5 + getAtkBonus(player.eq.w || { effect: {} });
     } else {
-      newPlayer.def = 2 + getAtkBonus(player.eq.w || { effect: {} });
+      newPlayer.def = 2 + getDefBonus(player.eq.a || { effect: {} });
     }
 
     set({ player: newPlayer });
@@ -577,36 +713,62 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { player, floor } = get();
     const nextFloor = floor + 1;
     const newMap = generateDungeon();
-    const shopAvailable = nextFloor % 3 === 0;
+    const shopAvailable = nextFloor % 3 === 0 && nextFloor >= 3;
 
     let newPlayer = { ...player, x: newMap.px, y: newMap.py };
 
     // 每5層Boss
     const bossFloor = nextFloor % 5 === 0 && nextFloor <= 15;
 
+    // 只有商店樓層才刷新庫存
+    const newItems = shopAvailable
+      ? BASE_ITEMS.slice(0, 3 + Math.floor(nextFloor / 3)).map(i => ({ ...i, quantity: 1 }))
+      : get().items;
+
+    const floorEnemies = spawnEnemiesForFloor(nextFloor);
+
     set({
       floor: nextFloor,
       map: newMap,
       player: newPlayer,
-      enemies: bossFloor ? spawnEnemiesForFloor(nextFloor) : spawnEnemiesForFloor(nextFloor),
-      items: BASE_ITEMS.slice(0, 3 + Math.floor(nextFloor / 3)).map(i => ({ ...i, quantity: 1 })),
+      enemies: floorEnemies,
+      items: newItems,
       shopAvailable,
-      boss: bossFloor ? spawnEnemiesForFloor(nextFloor)[0] || null : null,
+      boss: bossFloor ? floorEnemies[0] || null : null,
       currentEnemy: null,
       diceValue: null,
       movePoints: 0,
+      hasRolledThisTurn: false,
     });
 
     // 存檔
     get().saveGame();
   },
 
-  checkGameOver: () => {
-    const { player } = get();
+checkGameOver: () => {
+    const { player, tutorialDone } = get();
     if (player.hp <= 0) {
+      // 教學模式保護：玩家歸零時自動復活半血，不觸發 Game Over
+      if (!tutorialDone) {
+        set({
+          player: {
+            ...player,
+            hp: Math.floor(player.maxHp / 2),
+          },
+          over: false,
+        });
+        return;
+      }
       set({ over: true });
     }
   },
+
+  // --- UI State Setters ---
+  setActiveTab: (tab) => set({ activeTab: tab }),
+  openShop: () => set({ showShop: true }),
+  closeShop: () => set({ showShop: false }),
+  openInventory: () => set({ showInventory: true }),
+  closeInventory: () => set({ showInventory: false }),
 
   saveGame: async () => {
     const { player, floor, enemies, items, map, boss } = get();

@@ -1,48 +1,81 @@
 // ============================================================
-// DungeonD3 — React Native 主入口 v2
+// DungeonD3 — React Native 主入口 v3 (手機格式重構)
+// 2 Tab + Overlay 模式
 // ============================================================
 import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import DiceScreen from './screens/DiceScreen';
 import MapScreen from './screens/MapScreen';
-import BattleScreen from './screens/BattleScreen';
-import ShopScreen from './screens/ShopScreen';
-import InventoryScreen from './screens/InventoryScreen';
+import BattleOverlay from './components/BattleOverlay';
+import ShopModal from './components/ShopModal';
+import InventoryModal from './components/InventoryModal';
 import TutorialOverlay from './components/TutorialOverlay';
 import { useGameStore } from './store/gameStore';
 import { initAudio, SFX } from './services/audio';
 
-const Tab = createBottomTabNavigator();
+function BottomTabBar() {
+  const activeTab = useGameStore(s => s.activeTab);
+  const setActiveTab = useGameStore(s => s.setActiveTab);
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (
-    <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-      <Text style={styles.tabIconText}>{emoji}</Text>
+    <View style={styles.tabBar}>
+      <TouchableOpacity
+        style={[styles.tabBtn, activeTab === 'dice' && styles.tabBtnActive]}
+        onPress={() => setActiveTab('dice')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.tabIcon}>🎲</Text>
+        <Text style={[styles.tabLabel, activeTab === 'dice' && styles.tabLabelActive]}>骰子</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.tabBtn, activeTab === 'map' && styles.tabBtnActive]}
+        onPress={() => setActiveTab('map')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.tabIcon}>🗺️</Text>
+        <Text style={[styles.tabLabel, activeTab === 'map' && styles.tabLabelActive]}>地圖</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 function GameOverOverlay() {
-  const { over, win, player, initGame } = useGameStore();
+  const over = useGameStore(s => s.over);
+  const win = useGameStore(s => s.win);
+  const player = useGameStore(s => s.player);
+  const floor = useGameStore(s => s.floor);
+  const initGame = useGameStore(s => s.initGame);
   if (!over && !win) return null;
   return (
     <View style={styles.gameOver}>
-      <View style={styles.gameOverCard}>
+      <View style={[styles.gameOverCard, win ? styles.winCard : styles.loseCard]}>
         <Text style={styles.gameOverTitle}>{win ? '🏆 勝利！' : '💀 遊戲結束'}</Text>
         <Text style={styles.gameOverText}>
-          {win ? '你成功通過了所有 15 層地城！' : '你在第 ' + useGameStore.getState().floor + ' 層倒下...'}
+          {win
+            ? '🎉 恭喜！你成功通過了所有 15 層地城！\n你是真正的地城探險家！'
+            : `😭 你在第 ${floor} 層倒下了...\n但失敗只是通往成功的墊腳石！`}
         </Text>
         <View style={styles.gameOverStats}>
-          <Text style={styles.gameOverStat}>等級 {player.lvl}</Text>
-          <Text style={styles.gameOverStat}>金幣 {player.gold}</Text>
-          <Text style={styles.gameOverStat}>通過 {useGameStore.getState().floor} 層</Text>
+          <View style={styles.statItem}>
+            <Text style={styles.statIcon}>⭐</Text>
+            <Text style={styles.statValue}>{player.lvl}</Text>
+            <Text style={styles.statLabel}>等級</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statIcon}>💰</Text>
+            <Text style={styles.statValue}>{player.gold}</Text>
+            <Text style={styles.statLabel}>金幣</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statIcon}>🏰</Text>
+            <Text style={styles.statValue}>{floor}</Text>
+            <Text style={styles.statLabel}>層數</Text>
+          </View>
         </View>
-        <TouchableOpacity style={styles.restartBtn} onPress={initGame}>
+        <TouchableOpacity style={[styles.restartBtn, win ? styles.winBtn : styles.loseBtn]} onPress={initGame}>
           <Text style={styles.restartBtnText}>重新開始</Text>
         </TouchableOpacity>
       </View>
@@ -52,11 +85,18 @@ function GameOverOverlay() {
 
 export default function App() {
   const initGame = useGameStore(s => s.initGame);
+  const activeTab = useGameStore(s => s.activeTab);
+  const currentEnemy = useGameStore(s => s.currentEnemy);
+  const showShop = useGameStore(s => s.showShop);
+  const showInventory = useGameStore(s => s.showInventory);
+  const over = useGameStore(s => s.over);
+  const win = useGameStore(s => s.win);
   const tutorialDone = useGameStore(s => s.tutorialDone);
   const tutorialStep = useGameStore(s => s.tutorialStep);
-  const tutorialVisible = !tutorialDone && tutorialStep < 5;
   const player = useGameStore(s => s.player);
   const prevLvl = React.useRef(player.lvl);
+
+  const tutorialVisible = !tutorialDone && tutorialStep < 6;
 
   useEffect(() => {
     initGame();
@@ -73,76 +113,56 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <View style={styles.container}>
-          <StatusBar style="light" />
-          <Tab.Navigator
-            screenOptions={{
-              headerShown: false,
-              tabBarStyle: {
-                backgroundColor: '#12122a',
-                borderTopWidth: 2,
-                borderTopColor: '#2a2a5a',
-                height: 60,
-                paddingBottom: 6,
-                paddingTop: 6,
-              },
-              tabBarActiveTintColor: '#4fc3f7',
-              tabBarInactiveTintColor: '#666',
-              tabBarLabelStyle: {
-                fontSize: 10,
-                marginTop: 2,
-              },
-            }}
-          >
-            <Tab.Screen
-              name="骰子"
-              component={DiceScreen}
-              options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎲" focused={focused} /> }}
-            />
-            <Tab.Screen
-              name="地圖"
-              component={MapScreen}
-              options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗺️" focused={focused} /> }}
-            />
-            <Tab.Screen
-              name="戰鬥"
-              component={BattleScreen}
-              options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚔️" focused={focused} /> }}
-            />
-            <Tab.Screen
-              name="商店"
-              component={ShopScreen}
-              options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛒" focused={focused} /> }}
-            />
-            <Tab.Screen
-              name="背包"
-              component={InventoryScreen}
-              options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎒" focused={focused} /> }}
-            />
-          </Tab.Navigator>
-          <GameOverOverlay />
-          <TutorialOverlay visible={tutorialVisible} />
-        </View>
-      </NavigationContainer>
+      <View style={styles.container}>
+        <StatusBar style="light" />
+
+        {/* Tab 內容 — 根據 activeTab 切換 */}
+        {activeTab === 'dice' ? <DiceScreen /> : <MapScreen />}
+
+        {/* 自訂底部 Tab Bar (2 按鈕) */}
+        <BottomTabBar />
+
+        {/* Overlay 層 — 疊加在 Tab 內容之上 */}
+        {currentEnemy && <BattleOverlay />}
+        {showShop && <ShopModal />}
+        {showInventory && <InventoryModal />}
+        {over && <GameOverOverlay />}
+        {tutorialVisible && <TutorialOverlay visible={tutorialVisible} />}
+      </View>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a14' },
-  tabIcon: {
-    width: 30,
-    height: 22,
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#12122a',
+    borderTopWidth: 2,
+    borderTopColor: '#2a2a5a',
+    height: 56,
+    paddingBottom: 4,
+  },
+  tabBtn: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 4,
+    paddingVertical: 6,
   },
-  tabIconActive: {
+  tabBtnActive: {
     backgroundColor: '#1a1a3a',
   },
-  tabIconText: {
-    fontSize: 16,
+  tabIcon: {
+    fontSize: 18,
+  },
+  tabLabel: {
+    color: '#666',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  tabLabelActive: {
+    color: '#4fc3f7',
+    fontWeight: 'bold',
   },
   gameOver: {
     ...StyleSheet.absoluteFillObject,
@@ -157,39 +177,67 @@ const styles = StyleSheet.create({
     padding: 28,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4fc3f7',
     maxWidth: 310,
+  },
+  winCard: {
+    borderColor: '#ffd700',
+  },
+  loseCard: {
+    borderColor: '#4fc3f7',
   },
   gameOverTitle: {
     color: '#4fc3f7',
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 12,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   gameOverText: {
     color: '#e0e0e0',
     fontSize: 15,
     textAlign: 'center',
-    marginBottom: 14,
+    marginBottom: 20,
+    lineHeight: 24,
   },
   gameOverStats: {
     flexDirection: 'row',
-    gap: 14,
-    marginBottom: 20,
+    gap: 20,
+    marginBottom: 24,
   },
-  gameOverStat: {
+  statItem: {
+    alignItems: 'center',
+    minWidth: 60,
+  },
+  statIcon: {
+    fontSize: 22,
+    marginBottom: 4,
+  },
+  statValue: {
+    color: '#ffd700',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  statLabel: {
     color: '#888',
-    fontSize: 13,
+    fontSize: 11,
+    marginTop: 2,
   },
   restartBtn: {
+    paddingHorizontal: 36,
+    paddingVertical: 14,
+    borderRadius: 30,
+  },
+  winBtn: {
+    backgroundColor: '#4caf50',
+  },
+  loseBtn: {
     backgroundColor: '#ab47bc',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
   },
   restartBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
   },
 });

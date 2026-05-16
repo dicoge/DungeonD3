@@ -1,13 +1,14 @@
 // ============================================================
-// 🗺️ 地圖頁 — 點擊移動 + 大格子
+// 🗺️ 地圖頁 — D-Pad + 底部操作面板
+// 手機格式重構
 // ============================================================
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGameStore } from '../store/gameStore';
 
-const CELL = 38; // 加大格子，方便點擊
-const VIEW_W = 9;  // 可視範圍
+const CELL = 40;
+const VIEW_W = 9;
 const VIEW_H = 11;
 
 const CELL_COLORS: Record<string, { bg: string; border: string; char: string }> = {
@@ -20,7 +21,11 @@ const CELL_COLORS: Record<string, { bg: string; border: string; char: string }> 
 };
 
 export default function MapScreen() {
-  const { map, player, floor, movePlayer, initGame, movePoints, enemies, isRolling } = useGameStore();
+  const {
+    map, player, floor, movePlayer, initGame, movePoints, enemies, isRolling,
+    encounterEnemy, openInventory, rollDice,
+    hasRolledThisTurn,
+  } = useGameStore();
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -32,12 +37,30 @@ export default function MapScreen() {
     if (movePoints <= 0) return;
     const dx = mx - player.x;
     const dy = my - player.y;
-    // 只允許上下左右一步
     if (Math.abs(dx) + Math.abs(dy) === 1) {
       const moved = movePlayer(dx, dy);
       if (moved) {
         useGameStore.getState().useMovePoint();
       }
+    }
+  };
+
+  // 攻擊按鈕 — 觸發戰鬥 overlay
+  const handleAttack = () => {
+    if (movePoints <= 0 || enemies.length === 0) return;
+    encounterEnemy(enemies[0]);
+  };
+
+  // 結束回合
+  const handleEndTurn = () => {
+    if (movePoints > 0) {
+      useGameStore.setState({
+        movePoints: 0,
+        hasRolledThisTurn: false,
+        diceValue: null,
+      });
+    } else if (!hasRolledThisTurn) {
+      rollDice();
     }
   };
 
@@ -49,16 +72,8 @@ export default function MapScreen() {
     );
   }
 
-  // 計算可視範圍（以玩家為中心）
   const startX = Math.max(0, Math.min(player.x - Math.floor(VIEW_W / 2), 30 - VIEW_W));
   const startY = Math.max(0, Math.min(player.y - Math.floor(VIEW_H / 2), 20 - VIEW_H));
-
-  // 檢查瓷磚上是否有敵人或道具
-  const enemyOnTile = (x: number, y: number) => enemies.find(e => e.x === x && e.y === y);
-  const itemOnTile = (x: number, y: number) => {
-    // 簡化：沒有物品地圖，用 floor 上的隨機判断
-    return null;
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,12 +84,12 @@ export default function MapScreen() {
         <Text style={styles.headerItem}>💰 {player.gold}</Text>
         <View style={[styles.moveTag, movePoints > 0 ? styles.tagActive : styles.tagEmpty]}>
           <Text style={styles.moveTagText}>
-            {movePoints > 0 ? `📍 ${movePoints} 行動點` : '⏸ 回合結束'}
+            {movePoints > 0 ? `📍 ${movePoints}` : '⏸ 結束'}
           </Text>
         </View>
       </View>
 
-      {/* 地圖（ScrollView 包住，可滑動） */}
+      {/* 地圖網格 */}
       <ScrollView
         ref={scrollRef}
         style={styles.mapScroll}
@@ -91,16 +106,14 @@ export default function MapScreen() {
                 const isPlayer = mx === player.x && my === player.y;
                 const cell = (map.cells[my] && map.cells[my][mx]) || 'void';
                 const style = CELL_COLORS[cell] || CELL_COLORS.void;
-                const enemy = enemyOnTile(mx, my);
-                const hasEnemy = !!enemy;
 
                 return (
                   <TouchableOpacity
                     key={`${mx}-${my}`}
                     style={[
                       styles.cell,
-                      { backgroundColor: hasEnemy ? '#2a1010' : style.bg },
-                      { borderColor: hasEnemy ? '#ef5350' : style.border },
+                      { backgroundColor: style.bg },
+                      { borderColor: style.border },
                       isPlayer && styles.playerCell,
                     ]}
                     onPress={() => !isPlayer && handleTileClick(mx, my)}
@@ -108,7 +121,7 @@ export default function MapScreen() {
                     activeOpacity={0.7}
                   >
                     <Text style={styles.cellChar}>
-                      {isPlayer ? '🧙' : hasEnemy ? enemy.icon : style.char}
+                      {isPlayer ? '🧙' : style.char}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -118,18 +131,48 @@ export default function MapScreen() {
         </View>
       </ScrollView>
 
-      {/* 圖例 + 提示 */}
-      <View style={styles.footer}>
-        <View style={styles.legend}>
-          <Text style={styles.legendText}>🧙 你</Text>
-          <Text style={styles.legendText}>🚪 樓梯</Text>
-          <Text style={styles.legendText}>👾 敵人</Text>
-          <Text style={styles.legendText}>▓ 牆 · 地板</Text>
+      {/* 底部操作面板 */}
+      <View style={styles.bottomArea}>
+        {/* 操作按鈕列 */}
+        <View style={styles.actionPanel}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.atkBtn]}
+            onPress={handleAttack}
+            disabled={movePoints <= 0 || enemies.length === 0}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionBtnText}>⚔️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => useGameStore.getState().openShop()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionBtnText}>🛒</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={openInventory}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionBtnText}>🎒</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.endTurnBtn]}
+            onPress={handleEndTurn}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionBtnText}>
+              {movePoints > 0 ? '⏸' : '🎲'}
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {/* 精簡提示行 */}
         <Text style={styles.hint}>
           {movePoints > 0
-            ? '👆 點擊相鄰格子移動（消耗行動點）'
-            : '⏸ 行動點耗盡！去骰子頁骰下一回合'}
+            ? '👆 點擊相鄰格子移動 | 攻擊敵人或使用道具'
+            : '⏸ 行動點耗盡 — 按「🎲」擲骰開始下一回合'}
         </Text>
       </View>
     </SafeAreaView>
@@ -149,10 +192,7 @@ const styles = StyleSheet.create({
     gap: 10,
     flexWrap: 'wrap',
   },
-  headerItem: {
-    color: '#e0e0e0',
-    fontSize: 13,
-  },
+  headerItem: { color: '#e0e0e0', fontSize: 13 },
   moveTag: {
     marginLeft: 'auto',
     paddingHorizontal: 10,
@@ -169,19 +209,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ef5350',
   },
-  moveTagText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#e0e0e0',
-  },
-  mapScroll: {
-    flex: 1,
-  },
-  mapScrollContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
+  moveTagText: { fontSize: 12, fontWeight: 'bold', color: '#e0e0e0' },
+  mapScroll: { flex: 1 },
+  mapScrollContent: { justifyContent: 'center', alignItems: 'center', paddingVertical: 10 },
   mapFrame: {
     borderWidth: 2,
     borderColor: '#2a2a5a',
@@ -201,39 +231,51 @@ const styles = StyleSheet.create({
     borderColor: '#4fc3f7',
     borderWidth: 2,
   },
-  cellChar: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  footer: {
+  cellChar: { fontSize: 16, textAlign: 'center' },
+  // 底部操作面板
+  bottomArea: {
     backgroundColor: '#12122a',
     borderTopWidth: 2,
     borderTopColor: '#2a2a5a',
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     alignItems: 'center',
   },
-  legend: {
+  // 操作面板
+  actionPanel: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+    width: '100%',
     justifyContent: 'center',
-    gap: 12,
-    marginBottom: 6,
   },
-  legendText: {
-    color: '#888',
-    fontSize: 11,
+  actionBtn: {
+    flex: 1,
+    backgroundColor: '#1a1a3a',
+    borderWidth: 1,
+    borderColor: '#2a2a5a',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  atkBtn: {
+    borderColor: '#e94560',
+  },
+  endTurnBtn: {
+    borderColor: '#4fc3f7',
+  },
+  actionBtnText: {
+    color: '#e0e0e0',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   hint: {
     color: '#4fc3f7',
-    fontSize: 13,
+    fontSize: 12,
     textAlign: 'center',
-    fontWeight: 'bold',
+    marginTop: 6,
   },
-  loading: {
-    color: '#e0e0e0',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 40,
-  },
+  loading: { color: '#e0e0e0', fontSize: 16, textAlign: 'center', marginTop: 40 },
 });

@@ -123,4 +123,5 @@ export interface GameState {
   boss: Enemy | null;
   diceValue: number | null;
   isRolling: boolean;
+  isLoading: boolean;
 }

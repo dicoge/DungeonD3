@@ -29,7 +29,11 @@ export default function DiceScreen() {
     }
     if (diceValue === null) {
       if (!tutorialDone && tutorialStep < TUTORIAL_STEPS.length) {
-        return TUTORIAL_STEPS[tutorialStep].content.split('\n')[0];
+        const s = TUTORIAL_STEPS[tutorialStep];
+        if (s.id === 'roll_dice') {
+          return '🎯 ' + s.content.split('\n')[0];
+        }
+        return s.title + ' — 前往地圖頁！';
       }
       return '按「擲骰」開始你的回合！';
     }
