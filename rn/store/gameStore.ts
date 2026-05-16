@@ -21,6 +21,9 @@ function calcMovePoints(diceValue: number): number {
   return Math.max(1, Math.floor(diceValue / 3));
 }
 
+// setTimeout reference for rollDice cleanup
+let diceTimeoutRef: ReturnType<typeof setTimeout> | null = null;
+
 // 攻擊結算
 function resolveAttack(atk: number, def: number): {
   d20Value: number;
@@ -324,8 +327,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { hasRolledThisTurn, movePoints } = get();
     // 已經骰過了，或行動點還沒用完，不能再骰
     if (hasRolledThisTurn || movePoints > 0) return;
+    // Clear any existing timeout to prevent memory leaks
+    if (diceTimeoutRef) {
+      clearTimeout(diceTimeoutRef);
+      diceTimeoutRef = null;
+    }
     set({ isRolling: true });
-    setTimeout(() => {
+    diceTimeoutRef = setTimeout(() => {
       const value = Math.floor(Math.random() * 20) + 1;
       const movePoints = calcMovePoints(value);
       set({
@@ -334,6 +342,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         movePoints,
         hasRolledThisTurn: true, // 標記本回合已骰
       });
+      diceTimeoutRef = null;
     }, 1500);
   },
 

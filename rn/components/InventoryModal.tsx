@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#4fc3f7',
     overflow: 'hidden',
+    zIndex: 65,
   },
   header: {
     flexDirection: 'row',
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 8,
     alignItems: 'center',
-    minHeight: 40,
+    minHeight: 44,
     justifyContent: 'center',
   },
   useBtnText: { color: '#0a0a14', fontSize: 13, fontWeight: 'bold' },

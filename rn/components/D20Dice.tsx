@@ -76,6 +76,12 @@ function centerTrianglePoints(): string {
 export default function D20Dice({ value, isRolling, onRoll, disabled }: D20DiceProps) {
   const spinValue = useRef(new Animated.Value(0)).current;
   const [displayValue, setDisplayValue] = useState<number>(1);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (isRolling) {
@@ -99,7 +105,9 @@ export default function D20Dice({ value, isRolling, onRoll, disabled }: D20DiceP
         spinValue.setValue(0);
       };
     } else if (value !== null) {
-      setDisplayValue(value);
+      if (isMountedRef.current) {
+        setDisplayValue(value);
+      }
     }
   }, [isRolling, value, spinValue]);
 
@@ -192,6 +200,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,
+    minHeight: 44,
   },
   rollButtonDisabled: {
     backgroundColor: '#555',

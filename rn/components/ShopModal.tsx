@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ffd700',
     overflow: 'hidden',
+    zIndex: 60,
   },
   header: {
     flexDirection: 'row',
