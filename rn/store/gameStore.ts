@@ -759,6 +759,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // 存檔
     get().saveGame();
+
+    // Win condition: reach floor 15 with no enemies
+    if (nextFloor >= 15 && floorEnemies.length === 0) {
+      set({ win: true });
+      get().saveGame();
+    }
   },
 
 checkGameOver: () => {
