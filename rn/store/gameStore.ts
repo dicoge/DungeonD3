@@ -323,8 +323,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   showInventory: false,
   isLoading: false,
 
+  // Encounter tracking for forced spawns
+  movesWithoutEncounter: 0,
+  rollsWithoutEncounter: 0,
+
   rollDice: () => {
-    const { hasRolledThisTurn, movePoints } = get();
+    const { hasRolledThisTurn, movePoints, rollsWithoutEncounter } = get();
     // 已經骰過了，或行動點還沒用完，不能再骰
     if (hasRolledThisTurn || movePoints > 0) return;
     // Clear any existing timeout to prevent memory leaks
@@ -336,12 +340,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
     diceTimeoutRef = setTimeout(() => {
       const value = Math.floor(Math.random() * 20) + 1;
       const movePoints = calcMovePoints(value);
+
+      // Track rolls without encounter (will be reset when player encounters enemy)
+      const newRollsWithout = rollsWithoutEncounter + 1;
+      const shouldSpawnEnemy = newRollsWithout >= 3;
+
       set({
         diceValue: value,
         isRolling: false,
         movePoints,
         hasRolledThisTurn: true, // 標記本回合已骰
+        rollsWithoutEncounter: shouldSpawnEnemy ? 0 : newRollsWithout,
       });
+
+      // If 3+ rolls without encounter, spawn a forced battle
+      if (shouldSpawnEnemy) {
+        const { floor, enemies, player } = get();
+        const floorMult = getFloorMultiplier(floor);
+        // Pick a random enemy appropriate for current floor
+        const eligibleEnemies = BASE_ENEMIES.filter(e => e.floor <= Math.max(1, Math.ceil(floor / 2)));
+        if (eligibleEnemies.length > 0) {
+          const baseEnemy = eligibleEnemies[rnd(eligibleEnemies.length)];
+          const forcedEnemy: Enemy = {
+            ...baseEnemy,
+            id: `forced_${Date.now()}`,
+            x: player.x,
+            y: player.y,
+            hp: Math.floor(baseEnemy.hp * floorMult),
+            damage: Math.floor(baseEnemy.damage * floorMult),
+            def: Math.floor(baseEnemy.def * floorMult),
+            currentHp: Math.floor(baseEnemy.hp * floorMult),
+          };
+          set({ enemies: [...enemies, forcedEnemy], currentEnemy: forcedEnemy });
+        }
+      }
+
       diceTimeoutRef = null;
     }, 1500);
   },
@@ -393,7 +426,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
             rarity: 'common' as const,
             currentHp: 15,
           };
-          set({ enemies: [weakEnemy] });
+          set({ enemies: [weakEnemy], currentEnemy: weakEnemy });
+        } else {
+          set({ currentEnemy: get().enemies[0] });
         }
         set({ movePoints: Math.max(1, get().movePoints) });
         break;
@@ -446,6 +481,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       tutorialHighlight: null,
       currentEnemy: null,
       shopAvailable: false,
+      movesWithoutEncounter: 0,
+      rollsWithoutEncounter: 0,
     });
   },
 
@@ -480,7 +517,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   movePlayer: (dx, dy) => {
-    const { player, map, movePoints } = get();
+    const { player, map, movePoints, enemies } = get();
     if (!map || movePoints <= 0) return false;
 
     const nx = player.x + dx;
@@ -497,7 +534,43 @@ export const useGameStore = create<GameStore>((set, get) => ({
       get().nextFloor();
     }
 
-    set({ player: newPlayer, movePoints: movePoints - 1 });
+    // Check if player landed on an enemy
+    const enemyOnCell = enemies.find(e => e.x === nx && e.y === ny);
+    if (enemyOnCell) {
+      // Reset counter on encounter
+      set({ player: newPlayer, movePoints: movePoints - 1, movesWithoutEncounter: 0 });
+    } else {
+      // Track moves without encounter
+      const newMovesWithout = get().movesWithoutEncounter + 1;
+      if (newMovesWithout >= 3) {
+        // Force spawn a random weak enemy at player position
+        const floorMult = getFloorMultiplier(get().floor);
+        const weakEnemies = BASE_ENEMIES.filter(e => e.floor <= Math.max(1, Math.ceil(get().floor / 2))).slice(0, 3);
+        if (weakEnemies.length > 0) {
+          const baseEnemy = weakEnemies[rnd(weakEnemies.length)];
+          const spawnedEnemy: Enemy = {
+            ...baseEnemy,
+            id: `spawned_${Date.now()}`,
+            x: nx,
+            y: ny,
+            hp: Math.floor(baseEnemy.hp * floorMult),
+            damage: Math.floor(baseEnemy.damage * floorMult),
+            def: Math.floor(baseEnemy.def * floorMult),
+            currentHp: Math.floor(baseEnemy.hp * floorMult),
+          };
+          set({
+            player: newPlayer,
+            movePoints: movePoints - 1,
+            enemies: [...enemies, spawnedEnemy],
+            movesWithoutEncounter: 0,
+          });
+        } else {
+          set({ player: newPlayer, movePoints: movePoints - 1, movesWithoutEncounter: newMovesWithout });
+        }
+      } else {
+        set({ player: newPlayer, movePoints: movePoints - 1, movesWithoutEncounter: newMovesWithout });
+      }
+    }
     return true;
   },
 
@@ -514,7 +587,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   encounterEnemy: (enemy) => {
-    set({ currentEnemy: enemy });
+    // Reset encounter tracking when player engages an enemy
+    set({ currentEnemy: enemy, movesWithoutEncounter: 0, rollsWithoutEncounter: 0 });
   },
 
   attack: () => {
