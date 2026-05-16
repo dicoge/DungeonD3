@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10, 10, 20, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 65,
   },
   modalContainer: {
     width: '90%',
@@ -217,11 +218,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#2a2a5a',
+    backgroundColor: '#4fc3f7',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeBtnText: { color: '#e0e0e0', fontSize: 16, fontWeight: 'bold' },
+  closeBtnText: { color: '#0a0a14', fontSize: 16, fontWeight: 'bold' },
   content: { flex: 1, padding: 16 },
   playerCard: {
     flexDirection: 'row',

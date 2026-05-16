@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   enemyName: { color: '#e0e0e0', fontSize: 16, fontWeight: 'bold' },
   enemyType: { color: '#e94560', fontSize: 11 },
   enemyHpBar: { height: 8, backgroundColor: '#2a2a5a', borderRadius: 4, overflow: 'hidden', marginBottom: 4 },
-  enemyHpFill: { height: '100%', backgroundColor: '#ab47bc', borderRadius: 4 },
+  enemyHpFill: { height: '100%', backgroundColor: '#ef5350', borderRadius: 4 },
   enemyHpText: { color: '#888', fontSize: 12, marginBottom: 4 },
   enemyStats: { color: '#888', fontSize: 12 },
   attackBtn: {

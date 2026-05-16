@@ -155,9 +155,12 @@ function spawnEnemiesForFloor(floor: number): Enemy[] {
     }
   }
 
-  const eligible = BASE_ENEMIES.filter(e => e.floor <= Math.ceil(floor / 2));
+  // Ensure at least floor 1 enemies are eligible, otherwise floors >=15 have no enemies
+  const eligible = BASE_ENEMIES.filter(e => e.floor <= Math.max(1, Math.ceil(floor / 2)));
   const count = Math.min(3 + Math.floor(floor / 2), 8);
-  const selected = eligible.sort(() => Math.random() - 0.5).slice(0, count);
+  // Fallback: if not enough enemies, include all BASE_ENEMIES
+  const selectedFromFull = eligible.length >= count ? eligible : BASE_ENEMIES;
+  const selected = selectedFromFull.sort(() => Math.random() - 0.5).slice(0, count);
 
   return selected.map(e => ({
     ...e,
@@ -443,7 +446,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const data = await AsyncStorage.getItem('dungeonD3_save');
       if (data) {
         const saved = JSON.parse(data);
-        set({ ...saved, isLoading: false, isRolling: false, currentEnemy: null });
+        // Version check - only load if version matches expected
+        if (saved.version !== '1.0.0') {
+          set({ isLoading: false });
+          return false;
+        }
+        set({
+          ...saved,
+          hasRolledThisTurn: false,
+          movePoints: 0,
+          diceValue: null,
+          isLoading: false,
+          isRolling: false,
+          currentEnemy: null,
+        });
         return true;
       }
       set({ isLoading: false });
@@ -672,17 +688,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       eq: { ...player.eq, [slot]: item },
     };
 
-    // 重新計算屬性
+    // 重新計算屬性 - use new item's bonus directly, not accumulated
     if (item.type === 'weapon') {
       newPlayer = {
         ...newPlayer,
-        atk: 5 + (slot === 'w' ? getAtkBonus(item) : getAtkBonus(player.eq.w || { effect: {} })),
+        atk: 5 + getAtkBonus(item),
       };
     }
     if (item.type === 'armor') {
       newPlayer = {
         ...newPlayer,
-        def: 2 + (slot === 'a' ? getDefBonus(item) : getDefBonus(player.eq.a || { effect: {} })),
+        def: 2 + getDefBonus(item),
       };
     }
 
@@ -771,10 +787,12 @@ checkGameOver: () => {
   closeInventory: () => set({ showInventory: false }),
 
   saveGame: async () => {
-    const { player, floor, enemies, items, map, boss } = get();
+    const { player, floor, enemies, items, map, boss, tutorialStep, tutorialDone, activeTab, shopAvailable, hasRolledThisTurn, movePoints, diceValue, isLoading, isRolling } = get();
     try {
       await AsyncStorage.setItem('dungeonD3_save', JSON.stringify({
         player, floor, enemies, items, map, boss,
+        tutorialStep, tutorialDone, activeTab, shopAvailable,
+        hasRolledThisTurn, movePoints, diceValue,
         version: '1.0.0',
         timestamp: Date.now(),
       }));

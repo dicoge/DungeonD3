@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   enemyName: { color: '#e0e0e0', fontSize: 15, fontWeight: 'bold' },
   enemyType: { color: '#e94560', fontSize: 11, marginTop: 1 },
   enemyHpBar: { height: 8, backgroundColor: '#2a2a5a', borderRadius: 4, overflow: 'hidden', marginBottom: 4 },
-  enemyHpFill: { height: '100%', backgroundColor: '#ab47bc', borderRadius: 4 },
+  enemyHpFill: { height: '100%', backgroundColor: '#ef5350', borderRadius: 4 },
   enemyHpText: { color: '#888', fontSize: 12, marginBottom: 4 },
   enemyStats: { color: '#888', fontSize: 12 },
   attackBtn: {
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#2a2a5a',
+    borderColor: '#4fc3f7',
   },
   enemyListIcon: { fontSize: 26, marginRight: 10 },
   enemyListInfo: { flex: 1 },
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   enemyListHp: { color: '#888', fontSize: 12 },
   engageBtn: { color: '#4fc3f7', fontSize: 13, fontWeight: 'bold' },
   closeBtn: {
-    backgroundColor: '#2a2a5a',
+    backgroundColor: '#e94560',
     borderRadius: 8,
     padding: 10,
     alignItems: 'center',
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
-  closeBtnText: { color: '#888', fontSize: 14 },
+  closeBtnText: { color: '#fff', fontSize: 14 },
   logBox: {
     backgroundColor: '#0d0d1a',
     borderRadius: 10,

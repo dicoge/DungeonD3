@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   rollButtonDisabled: {
     backgroundColor: '#555',
-    opacity: 0.7,
+    opacity: 0.4,
   },
   rollText: {
     color: '#fff',

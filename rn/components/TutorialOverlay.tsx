@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10, 10, 20, 0.92)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 200,
+    zIndex: 70,
   },
 
   // --- Welcome card ---
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    zIndex: 200,
+    zIndex: 70,
     pointerEvents: 'box-none',
   },
   progressRow: {

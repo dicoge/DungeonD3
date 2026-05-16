@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   priceRed: { color: '#ef5350' },
   itemEffect: { color: '#888', fontSize: 13, marginBottom: 10 },
   buyBtn: { backgroundColor: '#4caf50', borderRadius: 8, padding: 10, alignItems: 'center' },
-  buyBtnDisabled: { backgroundColor: '#333' },
+  buyBtnDisabled: { backgroundColor: '#333', opacity: 0.4 },
   buyBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
   tipBox: {
     backgroundColor: '#12122a',
