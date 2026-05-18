@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#12122a',
     borderTopWidth: 2,
-    borderTopColor: '#2a2a5a',
+    borderTopColor: '#4fc3f7',
     height: 56,
     paddingBottom: 4,
   },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4caf50',
   },
   loseBtn: {
-    backgroundColor: '#ab47bc',
+    backgroundColor: '#ef5350',
   },
   restartBtnText: {
     color: '#fff',

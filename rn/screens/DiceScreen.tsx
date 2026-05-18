@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 2,
-    borderBottomColor: '#2a2a5a',
+    borderBottomColor: '#4fc3f7',
   },
   statusItem: {
     alignItems: 'center',
@@ -183,11 +183,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ab47bc',
+    borderColor: '#e94560',
     minWidth: 200,
   },
   resultTitle: {
-    color: '#ab47bc',
+    color: '#ef5350',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#12122a',
     paddingVertical: 14,
     borderTopWidth: 2,
-    borderTopColor: '#2a2a5a',
+    borderTopColor: '#4fc3f7',
   },
   statCol: {
     alignItems: 'center',

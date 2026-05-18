@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     width: '90%',
     borderWidth: 2,
-    borderColor: '#ab47bc',
+    borderColor: '#e94560',
     alignItems: 'center',
   },
   welcomeIcon: {
@@ -298,10 +298,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#2a2a5a',
+    backgroundColor: '#1a1a3a',
   },
   dotActive: {
-    backgroundColor: '#ab47bc',
+    backgroundColor: '#ef5350',
     width: 10,
     height: 10,
     borderRadius: 5,
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     width: '90%',
     borderWidth: 2,
-    borderColor: '#ab47bc',
+    borderColor: '#e94560',
     alignItems: 'center',
   },
   hintTitle: {

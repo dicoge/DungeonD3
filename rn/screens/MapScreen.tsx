@@ -13,7 +13,7 @@ const VIEW_H = 11;
 
 const CELL_COLORS: Record<string, { bg: string; border: string; char: string }> = {
   void:   { bg: '#0a0a14', border: '#0a0a14', char: '' },
-  wall:   { bg: '#1a1a3a', border: '#2a2a5a', char: '▓' },
+  wall:   { bg: '#1a1a3a', border: '#4fc3f7', char: '▓' },
   floor:  { bg: '#12122a', border: '#1a1a3a', char: '·' },
   stairs: { bg: '#1a3a1a', border: '#2a5a2a', char: '🚪' },
   enemy:  { bg: '#2a1010', border: '#ef5350', char: '👾' },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#12122a',
     borderBottomWidth: 2,
-    borderBottomColor: '#2a2a5a',
+    borderBottomColor: '#4fc3f7',
     gap: 10,
     flexWrap: 'wrap',
   },
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   mapScrollContent: { justifyContent: 'center', alignItems: 'center', paddingVertical: 10 },
   mapFrame: {
     borderWidth: 2,
-    borderColor: '#2a2a5a',
+    borderColor: '#4fc3f7',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   bottomArea: {
     backgroundColor: '#12122a',
     borderTopWidth: 2,
-    borderTopColor: '#2a2a5a',
+    borderTopColor: '#4fc3f7',
     paddingVertical: 8,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1a1a3a',
     borderWidth: 1,
-    borderColor: '#2a2a5a',
+    borderColor: '#4fc3f7',
     borderRadius: 8,
     paddingVertical: 10,
     alignItems: 'center',
