@@ -641,7 +641,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         xpN: Math.floor(newPlayer.xpN * 1.5),
         maxHp: newMaxHp,
         atk: newPlayer.atk + 2,
-        hp: Math.min(player.hp + 10, newMaxHp),
+        hp: Math.min(newPlayer.hp + 10, newMaxHp),
       };
     }
 
@@ -800,7 +800,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
 
     if (slot === 'w') {
-      newPlayer.atk = 5 + getAtkBonus(player.eq.w || { effect: {} });
+      newPlayer.atk = 5 + getAtkBonus(item);
     } else {
       newPlayer.def = 2 + getDefBonus(player.eq.a || { effect: {} });
     }
