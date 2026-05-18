@@ -120,15 +120,6 @@ const FLOOR_MULTIPLIER: Record<string, number> = {
   '1-3': 1.0, '4-6': 1.3, '7-9': 1.6, '10-14': 2.0, '15': 2.0,
 };
 
-function generateTutorialMap(): DungeonMap {
-  const cells = Array.from({ length: 5 }, () => Array(5).fill('void'));
-  for (let x = 0; x < 5; x++) { cells[0][x] = 'wall'; cells[4][x] = 'wall'; }
-  for (let y = 0; y < 5; y++) { cells[y][0] = 'wall'; cells[y][4] = 'wall'; }
-  for (let y = 1; y < 4; y++) for (let x = 1; x < 4; x++) cells[y][x] = 'floor';
-  cells[2][1] = 'stairs'; // 出口在 (1,2)
-  return { cells, px: 2, py: 2, sx: 1, sy: 2, rooms: [{ x: 1, y: 1, w: 3, h: 3 }] };
-}
-
 const BASE_ENEMIES: Omit<Enemy, 'currentHp'>[] = [
   { id: 'slime', name: '史萊姆', icon: '🟢', floor: 1, hp: 30, damage: 5, def: 2, xp_reward: 10, rarity: 'common' },
   { id: 'goblin', name: '哥布林', icon: '👺', floor: 1, hp: 35, damage: 6, def: 3, xp_reward: 12, rarity: 'common' },
@@ -200,61 +191,43 @@ const BASE_ITEMS: Item[] = [
 // Tutorial Steps — 互動引導式教學
 // 每一步引導玩家操作 UI 元素，自動進度，無跳過按鈕
 // ============================================================
-export type TutorialHighlight = 'ROLL_DICE' | 'MOVE_TILE' | 'ATTACK_BTN' | 'USE_ITEM' | 'EXIT_GLOW' | null;
+export type TutorialHighlight = 'ROLL_DICE' | 'MOVE_TILE' | 'ATTACK_BTN' | 'USE_ITEM' | null;
 
 export const TUTORIAL_STEPS = [
   {
     id: 'welcome',
     title: '歡迎來到地城！',
-    content: '我是你的嚮導 🧙‍♂️\n跟著我學習基本操作！',
+    content: '我是你的嚮導 🧙‍♂️\n點擊下方按鈕，開始你的冒險之旅！',
     highlight: null as TutorialHighlight,
   },
   {
     id: 'roll_dice',
     title: '🎲 擲出命運之骰',
-    content: '點擊發光的骰子按鈕！\n骰值越高，行動點數越多！',
+    content: '點擊發光的骰子按鈕來擲骰！\n骰值越高，行動點數越多！',
     highlight: 'ROLL_DICE' as TutorialHighlight,
   },
   {
     id: 'move_player',
     title: '🗺️ 踏出第一步',
-    content: '點擊相鄰格子移動！\n每走一步消耗 1 行動點。',
+    content: '點擊發光的格子來移動角色！\n每走一步消耗 1 行動點。',
     highlight: 'MOVE_TILE' as TutorialHighlight,
   },
   {
     id: 'attack_enemy',
-    title: '⚔️ 遭遇敵人！',
-    content: '點擊敵人或攻擊按鈕\n進入戰鬥！',
+    title: '⚔️ 戰鬥！',
+    content: '點擊發光的攻擊按鈕來戰鬥！\n打倒敵人前進吧！',
     highlight: 'ATTACK_BTN' as TutorialHighlight,
-  },
-  {
-    id: 'defeat_enemy',
-    title: '🎯 攻擊敵人！',
-    content: '消滅這隻弱小的史萊姆！',
-    highlight: 'ATTACK_BTN' as TutorialHighlight,
-  },
-  {
-    id: 'pickup_item',
-    title: '💎 拾取道具',
-    content: '地上有閃爍的道具！\n踩上去自動拾取！',
-    highlight: 'MOVE_TILE' as TutorialHighlight,
   },
   {
     id: 'use_item',
     title: '🎒 使用道具',
-    content: '打開背包使用生命藥水\n恢復 HP！',
+    content: '打開背包，點擊「使用」按鈕\n用生命藥水恢復 HP！',
     highlight: 'USE_ITEM' as TutorialHighlight,
   },
   {
-    id: 'go_exit',
-    title: '🚪 前往出口',
-    content: '出口就在旁邊！\n綠色光圈引導你！',
-    highlight: 'EXIT_GLOW' as TutorialHighlight,
-  },
-  {
     id: 'complete',
-    title: '🎉 教學完成！',
-    content: '恭喜完成新手教學！\n開始你的冒險吧！',
+    title: '開始冒險！',
+    content: '準備好了嗎？\n前往 15 層地城，擊敗所有敵人！',
     highlight: null as TutorialHighlight,
   },
 ];
@@ -275,10 +248,6 @@ interface GameStore extends GameState {
   tutorialDone: boolean;
   tutorialHighlight: TutorialHighlight;
   completeTutorialStep: (stepId: string) => void;
-
-  // 敵人追蹤（強制遭遇系統）
-  movesWithoutEncounter: number;
-  rollsWithoutEncounter: number;
 
   // 初始化
   initGame: () => void;

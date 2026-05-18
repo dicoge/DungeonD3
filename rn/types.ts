@@ -32,6 +32,8 @@ export interface Enemy {
   xp_reward: number;
   rarity: 'common' | 'uncommon' | 'rare' | 'boss';
   currentHp: number;
+  x?: number;
+  y?: number;
 }
 
 export interface Item {
