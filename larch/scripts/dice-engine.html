@@ -53,7 +53,7 @@ button.gold{background:linear-gradient(180deg,#f2c230,#b5801c);color:#2a1a04;bor
 <script>
 (function(){
 var DATA=__DATA__;
-var V={},ready=false,busy=false,curCmd='',mode='idle',S=null,B=null,lvQueue=0,lvWait=false;
+var V={},onMap=true,ready=false,busy=false,curCmd='',mode='idle',S=null,B=null,lvQueue=0,lvWait=false;
 var $=function(i){return document.getElementById(i)};
 function post(m){parent.postMessage(m,'*')}
 function set(n,v){V[n]=v;post({type:'larch:set',name:n,value:v})}
@@ -89,7 +89,7 @@ function drawChip(){if(!S)return;var h=hero();$('chipimg').src=DATA.img.dice20;
   $('chip1').innerHTML='🎲 <b>Lv '+S.lv+'</b>　命中 +'+h.hit+'　傷害 '+h.n+'d'+h.d+'+'+h.dmg;
   $('chip2').innerHTML='防禦 '+h.ac+'　爆擊 '+(h.crit<20?h.crit+'–20':'20')+'　幸運 '+h.luck;
   $('chipxp').style.width=clamp(S.xp/xpNeed()*100,0,100)+'%'}
-function showChip(){mode='idle';$('panel').style.display='none';$('chip').style.display='flex';resize(300,62);drawChip()}
+function showChip(){mode='idle';$('panel').style.display='none';if(!onMap){$('chip').style.display='none';resize(32,32);return}$('chip').style.display='flex';resize(300,62);drawChip()}
 function showPanel(){$('chip').style.display='none';$('panel').style.display='flex';resize(640,560)}
 function log(t,c){var d=document.createElement('div');d.innerHTML=t;if(c)d.className=c;$('log').appendChild(d);while($('log').children.length>4)$('log').removeChild($('log').firstChild)}
 function acts(list){var a=$('acts');a.innerHTML='';list.forEach(function(x){var b=document.createElement('button');b.textContent=x[0];if(x[2])b.className=x[2];if(x[3])b.disabled=true;b.onclick=function(){if(busy)return;a.innerHTML='';x[1]()};a.appendChild(b)})}
@@ -214,10 +214,10 @@ function onCmd(){var c=V.dz_cmd||'';if(!c||c===curCmd||mode!=='idle')return;curC
   else if(p[0]==='chest')chest(p[1],isNaN(+p[2])?1:+p[2]);
   else if(p[0]==='heal'){setHp(maxHp());finish()}
   else finish()}
-addEventListener('message',function(e){var d=e.data||{};if(d.type!=='larch:hud:init'&&d.type!=='larch:hud:update')return;V=d.variables||{};S=stats();
+addEventListener('message',function(e){var d=e.data||{};if(d.type!=='larch:hud:init'&&d.type!=='larch:hud:update')return;V=d.variables||{};S=stats();onMap=/^map-/.test(d.cardId||'');
   if(!ready){ready=true;if(!/"lv"/.test(V.dz||''))saveStats();showChip()}
   if(lvWait&&V.dz_lvup!=='true'){lvWait=false}pumpLv();
-  if(mode==='idle')drawChip();else heroBar();onCmd()});
+  if(mode==='idle')showChip();else heroBar();onCmd()});
 post({type:'larch:ready'});
 })();
 </script></body></html>
