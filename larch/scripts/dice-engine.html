@@ -3,9 +3,9 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:#f3e9ff;font-family:"Noto Sans TC",system-ui,sans-serif;-webkit-user-select:none;user-select:none}
 img{image-rendering:pixelated}
-#chip{position:absolute;inset:0;display:flex;align-items:center;gap:8px;padding:6px 10px;background:linear-gradient(180deg,#2a1240f2,#170a26f2);border:2px solid #9b30d0;border-radius:12px;box-shadow:0 0 14px #9b30d088;cursor:default}
-#chip img{width:40px;height:40px;flex:none}
-#chip .t{font-size:12px;line-height:1.35}
+#chip{position:absolute;inset:0;display:flex;align-items:center;gap:6px;padding:5px 8px;background:linear-gradient(180deg,#2a1240f2,#170a26f2);border:2px solid #9b30d0;border-radius:12px;box-shadow:0 0 14px #9b30d088;cursor:default}
+#chip img{width:30px;height:30px;flex:none}
+#chip .t{font-size:11px;line-height:1.35;white-space:nowrap}
 #chip b{color:#ffe57a}
 #chip .xp{height:4px;background:#3a1d55;border-radius:3px;margin-top:3px;overflow:hidden}
 #chip .xp i{display:block;height:100%;background:#b06bff}
@@ -86,10 +86,10 @@ function hero(){var w=weapon(),lv=S.lv;return{hit:1+Math.floor(lv/2)+S.hit+(w.hi
 function xpNeed(){return 20+S.lv*12}
 // ---------- chip ----------
 function drawChip(){if(!S)return;var h=hero();$('chipimg').src=DATA.img.dice20;
-  $('chip1').innerHTML='🎲 <b>Lv '+S.lv+'</b>　命中 +'+h.hit+'　傷害 '+h.n+'d'+h.d+'+'+h.dmg;
-  $('chip2').innerHTML='防禦 '+h.ac+'　爆擊 '+(h.crit<20?h.crit+'–20':'20')+'　幸運 '+h.luck;
+  $('chip1').innerHTML='<b>Lv '+S.lv+'</b> 命中+'+h.hit+' 傷害 '+h.n+'d'+h.d+'+'+h.dmg;
+  $('chip2').innerHTML='防禦 '+h.ac+' 爆擊 '+(h.crit<20?h.crit+'–20':'20')+' 幸運 '+h.luck;
   $('chipxp').style.width=clamp(S.xp/xpNeed()*100,0,100)+'%'}
-function showChip(){mode='idle';$('panel').style.display='none';if(!onMap){$('chip').style.display='none';resize(32,32);return}$('chip').style.display='flex';resize(300,62);drawChip()}
+function showChip(){mode='idle';$('panel').style.display='none';if(!onMap){$('chip').style.display='none';resize(32,32);return}$('chip').style.display='flex';resize(222,56);drawChip()}
 function showPanel(){$('chip').style.display='none';$('panel').style.display='flex';resize(640,560)}
 function log(t,c){var d=document.createElement('div');d.innerHTML=t;if(c)d.className=c;$('log').appendChild(d);while($('log').children.length>4)$('log').removeChild($('log').firstChild)}
 function acts(list){var a=$('acts');a.innerHTML='';list.forEach(function(x){var b=document.createElement('button');b.textContent=x[0];if(x[2])b.className=x[2];if(x[3])b.disabled=true;b.onclick=function(){if(busy)return;a.innerHTML='';x[1]()};a.appendChild(b)})}
