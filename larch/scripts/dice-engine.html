@@ -9,34 +9,43 @@ img{image-rendering:pixelated}
 #chip b{color:#ffe57a}
 #chip .xp{height:4px;background:#3a1d55;border-radius:3px;margin-top:3px;overflow:hidden}
 #chip .xp i{display:block;height:100%;background:#b06bff}
-#panel{position:absolute;inset:0;display:none;flex-direction:column;background:radial-gradient(ellipse at 50% 30%,#3a1660f5,#12061ef8 70%);border:3px solid #b06bff;border-radius:14px;box-shadow:0 0 30px #9b30d0aa;padding:10px 12px;overflow:hidden}
-#panel h2{margin:0 0 4px;font-size:16px;letter-spacing:.1em;color:#ffe57a;text-align:center}
-#foes{display:flex;justify-content:center;gap:10px;min-height:118px;align-items:flex-end}
-.foe{width:118px;text-align:center;font-size:11px;position:relative;transition:transform .15s,opacity .4s}
-.foe img{width:84px;height:84px;display:block;margin:0 auto}
+#panel{position:absolute;inset:0;display:none;flex-direction:column;background:radial-gradient(ellipse at 50% 30%,#3a1660f5,#12061ef8 70%);border:3px solid #b06bff;border-radius:14px;box-shadow:0 0 30px #9b30d0aa;padding:8px 12px 10px;overflow:hidden;outline:none}
+#panel h2{margin:0;font-size:16px;letter-spacing:.1em;color:#ffe57a;text-align:center}
+#turn{text-align:center;font-size:12px;margin:2px 0 4px;min-height:18px}
+#turn span{display:inline-block;padding:1px 10px;border-radius:9px;background:#2b1340;border:1px solid #6a3b8f}
+#turn span.me{background:#5a1680;border-color:#e9c8ff;color:#fff}
+#turn span.foe{background:#5a1418;border-color:#ff8a7a;color:#ffd9d4}
+#foes{display:flex;justify-content:center;gap:10px;min-height:112px;align-items:flex-end}
+.foe{width:118px;text-align:center;font-size:11px;position:relative;transition:transform .15s,opacity .4s;cursor:pointer}
+.foe img{width:80px;height:80px;display:block;margin:0 auto}
 .foe.dead{opacity:.25;filter:grayscale(1)}
 .foe.hit{animation:shake .35s}
+.foe.tgt img{filter:drop-shadow(0 0 6px #ffe57a)}
 .foe .ac{position:absolute;top:0;right:4px;background:#1a0828;border:1px solid #6a3b8f;border-radius:6px;padding:0 4px;font-size:10px}
 .bar{height:7px;background:#2b1340;border-radius:4px;overflow:hidden;margin:3px 4px 0}
 .bar i{display:block;height:100%;background:linear-gradient(90deg,#e84537,#ff8a5a);transition:width .35s}
 .hbar i{background:linear-gradient(90deg,#43e1b3,#9fe870)}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 #mid{flex:1;display:flex;align-items:center;justify-content:center;gap:14px;min-height:0;position:relative}
-#die{width:190px;height:190px;cursor:pointer;position:relative;flex:none}
+#die{width:170px;height:170px;cursor:pointer;position:relative;flex:none}
 #die img{width:100%;height:100%;object-fit:contain}
-#die .hint{position:absolute;left:0;right:0;bottom:-2px;text-align:center;font-size:12px;color:#ffe57a;animation:blink 1s infinite}
+#die.foeroll img{filter:hue-rotate(150deg) saturate(.85)}
+#die .hint{position:absolute;left:-10px;right:-10px;bottom:-4px;text-align:center;font-size:12px;color:#ffe57a;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.35}}
-#side{width:220px;font-size:13px;line-height:1.5}
-.big{font-size:30px;font-weight:900;color:#fff;text-shadow:0 0 10px #b06bff}
-.dmgdie{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border:3px solid #ffe57a;border-radius:10px;background:#5a1680;font-weight:900;font-size:20px;margin:2px;transform:rotate(-8deg)}
+#side{width:230px;font-size:13px;line-height:1.5}
+.big{font-size:24px;font-weight:900;color:#fff;text-shadow:0 0 10px #b06bff;line-height:1.25}
+.res{font-size:14px;font-weight:700;margin-top:4px}
+.dmgdie{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border:3px solid #ffe57a;border-radius:10px;background:#5a1680;font-weight:900;font-size:19px;margin:2px;transform:rotate(-8deg)}
 .dmgdie.spin{animation:spin .12s linear infinite}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+#tip{display:none;margin:4px 0 0;padding:6px 10px;border-radius:9px;background:#ffe57a;color:#2a1a04;font-size:12.5px;line-height:1.45;font-weight:600}
+#tip b{color:#7a1c1c}
 #hero{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:4px}
-#hero img{width:42px;height:42px}
+#hero img{width:40px;height:40px}
 #hero .grow{flex:1}
-#log{height:66px;overflow:hidden;font-size:12px;line-height:1.45;color:#e9dcff;background:#0c0414aa;border-radius:8px;padding:4px 8px;margin-top:6px;display:flex;flex-direction:column;justify-content:flex-end}
+#log{height:62px;overflow:hidden;font-size:12px;line-height:1.45;color:#cdbbe6;background:#0c0414aa;border-radius:8px;padding:4px 8px;margin-top:5px;display:flex;flex-direction:column;justify-content:flex-end}
 #log div:last-child{color:#fff}
-#acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+#acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:7px;min-height:36px}
 button{appearance:none;border:2px solid #e9c8ff;background:linear-gradient(180deg,#9b30d0,#5a1680);color:#fff;font:700 14px "Noto Sans TC",system-ui;padding:7px 12px;border-radius:9px;cursor:pointer;box-shadow:inset 0 -3px 0 #0004}
 button:hover{filter:brightness(1.15)}
 button:disabled{opacity:.4;cursor:default;filter:none}
@@ -44,31 +53,33 @@ button.gold{background:linear-gradient(180deg,#f2c230,#b5801c);color:#2a1a04;bor
 .tbl{font-size:12px;line-height:1.55;margin:4px 0}
 .tbl span{display:block;padding:0 6px;border-radius:5px}
 .tbl span.on{background:#ffe57a;color:#2a1a04;font-weight:700}
-.crit{color:#ffe57a!important}.fail{color:#ff7a6a!important}
+.crit{color:#ffe57a!important}.fail{color:#ff7a6a!important}.ok{color:#9fe870!important}
 </style></head><body>
 <div id="chip"><img id="chipimg" alt=""><div class="t"><div id="chip1"></div><div id="chip2"></div><div class="xp"><i id="chipxp"></i></div></div></div>
-<div id="panel"><h2 id="title"></h2><div id="foes"></div><div id="mid"><div id="die"></div><div id="side"></div></div>
+<div id="panel" tabindex="0"><h2 id="title"></h2><div id="turn"></div><div id="foes"></div><div id="mid"><div id="die"></div><div id="side"></div></div>
+<div id="tip"></div>
 <div id="hero"><img id="heroimg" alt=""><div class="grow"><div id="herotxt"></div><div class="bar hbar"><i id="herohp"></i></div></div></div>
 <div id="log"></div><div id="acts"></div></div>
 <script>
 (function(){
 var DATA=__DATA__;
-var V={},onMap=true,ready=false,busy=false,curCmd='',mode='idle',S=null,B=null,lvQueue=0,lvWait=false;
+var V={},onMap=true,ready=false,busy=false,curCmd='',mode='idle',S=null,B=null,lvWait=false,growing=false;
 var $=function(i){return document.getElementById(i)};
 function post(m){parent.postMessage(m,'*')}
 function set(n,v){V[n]=v;post({type:'larch:set',name:n,value:v})}
 function resize(w,h){post({type:'larch:hud:resize',width:w,height:h})}
 function rnd(n){return 1+Math.floor(Math.random()*n)}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function sg(n){return n<0?'− '+(-n):'+ '+n}
 // ---------- sound ----------
 var AC=null;function tone(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||'square';o.frequency.value=f;g.gain.value=v||0.05;o.connect(g);g.connect(AC.destination);var n=AC.currentTime;g.gain.exponentialRampToValueAtTime(0.0001,n+d);o.start(n);o.stop(n+d)}catch(e){}}
 function sClack(){tone(220+Math.random()*80,.05,'square',.04)}
 function sHit(){tone(140,.12,'sawtooth',.07)}
 function sCrit(){tone(660,.1,'square',.06);setTimeout(function(){tone(990,.18,'square',.06)},90)}
 function sFail(){tone(110,.3,'triangle',.08)}
-// ---------- state ----------
+// ---------- persistent hero state ----------
 function stats(){var s={};try{s=JSON.parse(V.dz||'{}')||{}}catch(e){}
-  var d={lv:1,xp:0,hit:0,str:0,ac:0,crit:0,luck:0,kills:0};for(var k in d)if(typeof s[k]!=='number')s[k]=d[k];return s}
+  var d={lv:1,xp:0,hit:0,str:0,ac:0,crit:0,luck:0,kills:0,pg:0,lvq:0,tips:0};for(var k in d)if(typeof s[k]!=='number')s[k]=d[k];return s}
 function saveStats(){set('dz',JSON.stringify(S))}
 function inv(){try{return JSON.parse(V.inventory||'[]')||[]}catch(e){return[]}}
 function count(id){var c=0;inv().forEach(function(x){if(x.id===id)c+=x.count||0});return c}
@@ -84,139 +95,177 @@ function hp(){return typeof V.rpgHp==='number'?V.rpgHp:Number(V.rpgHp)||0}
 function setHp(v){set('rpgHp',clamp(Math.round(v),0,maxHp()))}
 function hero(){var w=weapon(),lv=S.lv;return{hit:1+Math.floor(lv/2)+S.hit+(w.hit||0),n:w.n,d:w.d,dmg:3+S.str+Math.floor(lv/3)+(w.bonus||0),ac:10+armorAC()+S.ac+Math.floor(lv/4),crit:Math.max(16,20-S.crit),luck:1+S.luck+charmLuck(),wname:w.name}}
 function xpNeed(){return 20+S.lv*12}
+// ---------- persistent encounter state (survives the HUD being reloaded) ----------
+function saveB(stage){if(!curCmd)return;var o={cmd:curCmd,stage:stage||'fight',log:[].map.call($('log').children,function(d){return [d.innerHTML,d.className]})};
+  if(B){o.B={floor:B.floor,foes:B.foes,opts:B.opts,luck:B.luck,guard:B.guard,target:B.target,round:B.round,exposed:B.exposed,after:B.after,tipped:B.tipped}}
+  set('dz_b',JSON.stringify(o))}
+function clearB(){set('dz_b','')}
 // ---------- chip ----------
 function drawChip(){if(!S)return;var h=hero();$('chipimg').src=DATA.img.dice20;
   $('chip1').innerHTML='<b>Lv '+S.lv+'</b> 命中+'+h.hit+' 傷害 '+h.n+'d'+h.d+'+'+h.dmg;
   $('chip2').innerHTML='防禦 '+h.ac+' 爆擊 '+(h.crit<20?h.crit+'–20':'20')+' 幸運 '+h.luck;
   $('chipxp').style.width=clamp(S.xp/xpNeed()*100,0,100)+'%'}
 function showChip(){mode='idle';$('panel').style.display='none';if(!onMap){$('chip').style.display='none';resize(32,32);return}$('chip').style.display='flex';resize(222,56);drawChip()}
-function showPanel(){$('chip').style.display='none';$('panel').style.display='flex';resize(640,560)}
+function showPanel(){$('chip').style.display='none';$('panel').style.display='flex';resize(640,580);try{$('panel').focus({preventScroll:true})}catch(e){}}
 function log(t,c){var d=document.createElement('div');d.innerHTML=t;if(c)d.className=c;$('log').appendChild(d);while($('log').children.length>4)$('log').removeChild($('log').firstChild)}
 function acts(list){var a=$('acts');a.innerHTML='';list.forEach(function(x){var b=document.createElement('button');b.textContent=x[0];if(x[2])b.className=x[2];if(x[3])b.disabled=true;b.onclick=function(){if(busy)return;a.innerHTML='';x[1]()};a.appendChild(b)})}
-function heroBar(){var h=hero();$('heroimg').src=DATA.img.hero;$('herotxt').innerHTML='冒險者 Lv'+S.lv+'　HP <b>'+hp()+'</b> / '+maxHp()+'　防禦 '+h.ac+(B&&B.luck!=null?'　🍀 '+B.luck:'')+'　🧪 '+(count('health_potion')+count('greater_potion'));$('herohp').style.width=clamp(hp()/maxHp()*100,0,100)+'%'}
+function heroBar(){var h=hero();$('heroimg').src=DATA.img.hero;$('herotxt').innerHTML='冒險者 Lv'+S.lv+'　HP <b>'+hp()+'</b> / '+maxHp()+'　防禦 '+h.ac+(B&&B.luck!=null?'　🍀 幸運 '+B.luck:'')+'　🧪 '+(count('health_potion')+count('greater_potion'));$('herohp').style.width=clamp(hp()/maxHp()*100,0,100)+'%'}
+function turn(who){if(!B){$('turn').innerHTML='';return}$('turn').innerHTML='<span>第 '+B.round+' 回合</span> <span class="'+(who==='me'?'me':'foe')+'">'+(who==='me'?'🟣 你的回合':'🔴 敵人的回合')+'</span>'}
+function side(big,res,cls){$('side').innerHTML='<div class="big '+(cls||'')+'">'+big+'</div>'+(res?'<div class="res '+(cls||'')+'">'+res+'</div>':'')}
+// tutorial tips (only in the practice fight, or the first time something happens)
+function tip(key,html){var el=$('tip');if(!html){el.style.display='none';return}
+  if(!(B&&B.opts.tut)&&key){var bit=1<<key;if(S.tips&bit){el.style.display='none';return}S.tips|=bit;saveStats()}
+  el.innerHTML=html;el.style.display='block'}
 // ---------- the D20 ----------
-function rollD20(hint,cb,face){ // shows rolling die; player clicks to stop
-  var d=$('die');d.innerHTML='<img src="'+DATA.img.rolling+'" alt="翻滾中的骰子"><div class="hint">'+(hint||'點擊骰子，讓它停下！')+'</div>';
+function idleDie(){var d=$('die');d.className='';d.innerHTML='<img src="'+DATA.img.q+'" alt="待擲的骰子">';d.onclick=null}
+function rollD20(hint,cb){ // rolling die; the player clicks (or presses Space) to stop it
+  var d=$('die');d.className='';d.innerHTML='<img src="'+DATA.img.rolling+'" alt="翻滾中的骰子"><div class="hint">'+(hint||'點擊骰子，讓它停下！')+'</div>';
   var t=setInterval(sClack,140);busy=false;var done=false;
-  d.onclick=function(){if(done)return;done=true;clearInterval(t);d.onclick=null;var r=rnd(20);d.innerHTML='<img src="'+DATA.img.faces[r]+'" alt="'+r+'">';if(r===20)sCrit();else if(r===1)sFail();else tone(330,.08,'square',.05);busy=true;setTimeout(function(){busy=false;cb(r)},450)};
-}
-function autoD20(cb){ // enemy roll: short animation, auto stop
-  var d=$('die');d.innerHTML='<img src="'+DATA.img.rolling+'" alt="">';d.onclick=null;busy=true;var t=setInterval(sClack,140);
-  setTimeout(function(){clearInterval(t);var r=rnd(20);d.innerHTML='<img src="'+DATA.img.faces[r]+'" alt="'+r+'" style="filter:hue-rotate(150deg) saturate(.8)">';busy=false;cb(r)},650)}
-function rollDice(n,d,cb){ // damage dice, auto with spin
-  var s=$('side'),box=document.createElement('div');box.innerHTML='';var els=[];
+  d.onclick=function(){if(done)return;done=true;clearInterval(t);d.onclick=null;var r=rnd(20);d.innerHTML='<img src="'+DATA.img.faces[r]+'" alt="'+r+'">';if(r===20)sCrit();else if(r===1)sFail();else tone(330,.08,'square',.05);busy=true;setTimeout(function(){busy=false;cb(r)},450)}}
+function foeD20(cb){var d=$('die');d.className='foeroll';d.innerHTML='<img src="'+DATA.img.rolling+'" alt="">';d.onclick=null;busy=true;var t=setInterval(sClack,140);
+  setTimeout(function(){clearInterval(t);var r=rnd(20);d.innerHTML='<img src="'+DATA.img.faces[r]+'" alt="'+r+'">';busy=false;cb(r)},700)}
+function rollDice(n,d,head,cb){var s=$('side'),box=document.createElement('div'),els=[];
   for(var i=0;i<n;i++){var e=document.createElement('span');e.className='dmgdie spin';e.textContent='?';box.appendChild(e);els.push(e)}
-  s.innerHTML='<div style="font-size:12px;opacity:.8">傷害骰 '+n+'d'+d+'</div>';s.appendChild(box);busy=true;var t=setInterval(function(){els.forEach(function(e){e.textContent=rnd(d)});sClack()},70);
-  setTimeout(function(){clearInterval(t);var sum=0;els.forEach(function(e){var v=rnd(d);sum+=v;e.textContent=v;e.classList.remove('spin')});busy=false;cb(sum)},600)}
+  s.innerHTML=head+'<div style="font-size:12px;opacity:.85;margin-top:4px">傷害骰 '+n+'d'+d+'</div>';s.appendChild(box);busy=true;var t=setInterval(function(){els.forEach(function(e){e.textContent=rnd(d)});sClack()},70);
+  setTimeout(function(){clearInterval(t);var sum=0;els.forEach(function(e){var v=rnd(d);sum+=v;e.textContent=v;e.classList.remove('spin')});busy=false;cb(sum)},650)}
 function dice(spec){var m=/(\d+)d(\d+)([+-]\d+)?/.exec(spec);var s=0;for(var i=0;i<+m[1];i++)s+=rnd(+m[2]);return s+(m[3]?+m[3]:0)}
 // ---------- battle ----------
 function startBattle(ids,floor,opts){
-  B={floor:floor,foes:ids.map(function(id,i){var e=JSON.parse(JSON.stringify(DATA.enemies[id]));e.key=i;e.max=e.hp;e.turn=0;return e}),opts:opts||{},luck:hero().luck,guard:0,target:0,round:1};
-  mode='battle';showPanel();$('title').textContent=(opts&&opts.title)||('遭遇：'+B.foes.map(function(f){return f.name}).join('、'));$('log').innerHTML='';
-  drawFoes();heroBar();$('side').innerHTML='<div class="big">你的回合</div>擲 D20 + 命中 ≥ 敵人防禦即命中。<br>擲出 '+hero().crit+(hero().crit<20?'–20':'')+' 爆擊，擲出 1 大失誤。';
-  $('die').innerHTML='<img src="'+DATA.img.faces[20]+'" alt="">';if(B.foes.some(function(f){return f.boss}))log(B.foes[0].intro||'','crit');playerTurn()}
+  B={floor:floor,foes:ids.map(function(id,i){var e=JSON.parse(JSON.stringify(DATA.enemies[id+'@'+floor]||DATA.enemies[id+'@5']));e.max=e.hp;e.turn=0;return e}),opts:opts||{},luck:hero().luck,guard:0,target:0,round:1,tipped:{}};
+  $('log').innerHTML='';openBattle();if(B.foes.some(function(f){return f.boss}))log(B.foes[0].intro||'','crit');playerTurn()}
+function openBattle(){mode='battle';showPanel();$('title').textContent=B.opts.title||('遭遇：'+B.foes.map(function(f){return f.name}).join('、'));drawFoes();heroBar()}
 function alive(){return B.foes.filter(function(f){return f.hp>0})}
-function drawFoes(){var w=$('foes');w.innerHTML='';B.foes.forEach(function(f,i){var d=document.createElement('div');d.className='foe'+(f.hp<=0?' dead':'')+(i===B.target&&f.hp>0?' tgt':'');d.id='foe'+i;
-  d.innerHTML='<span class="ac">防 '+f.ac+'</span><img src="'+f.img+'" alt="'+f.name+'" style="'+(f.boss?'width:104px;height:104px':'')+'"><div>'+(i===B.target&&f.hp>0&&alive().length>1?'▶ ':'')+f.name+'</div><div class="bar"><i style="width:'+clamp(f.hp/f.max*100,0,100)+'%"></i></div><div>'+Math.max(0,f.hp)+' / '+f.max+'</div>';
-  d.onclick=function(){if(f.hp>0&&!busy){B.target=i;drawFoes()}};w.appendChild(d)})}
+function drawFoes(){var w=$('foes');w.innerHTML='';B.foes.forEach(function(f,i){var d=document.createElement('div');d.className='foe'+(f.hp<=0?' dead':'')+(i===B.target&&f.hp>0&&alive().length>1?' tgt':'');d.id='foe'+i;
+  d.innerHTML='<span class="ac">防 '+f.ac+'</span><img src="'+f.img+'" alt="'+f.name+'" style="'+(f.boss?'width:100px;height:100px':'')+'"><div>'+(i===B.target&&f.hp>0&&alive().length>1?'▶ ':'')+f.name+'</div><div class="bar"><i style="width:'+clamp(f.hp/f.max*100,0,100)+'%"></i></div><div>'+Math.max(0,f.hp)+' / '+f.max+'</div>';
+  d.onclick=function(){if(f.hp>0&&!busy&&$('acts').children.length){B.target=i;drawFoes()}};w.appendChild(d)})}
 function playerTurn(){if(!alive().length)return victory();if(hp()<=0)return defeat();
-  if(B.foes[B.target].hp<=0)B.target=B.foes.indexOf(alive()[0]);drawFoes();heroBar();
+  if(B.foes[B.target].hp<=0)B.target=B.foes.indexOf(alive()[0]);drawFoes();heroBar();turn('me');idleDie();
+  var h=hero(),f=B.foes[B.target];side('你的回合','擲 D20 '+sg(h.hit)+'（命中）≥ '+f.name+'的防 '+f.ac+' 就打中');
   var pots=count('greater_potion')+count('health_potion');
   acts([['⚔️ 擲骰攻擊',attack,'gold'],['🛡️ 擲骰防禦',defend],['🧪 藥水 ('+pots+')',potion,'',pots<1],['🏃 擲骰逃跑',flee,'',!!B.opts.noflee]]);
-  $('die').innerHTML='<img src="'+DATA.img.faces[20]+'" alt="">';$('die').onclick=null}
-function attack(){acts([]);var h=hero(),f=B.foes[B.target];$('side').innerHTML='<div class="big">攻擊 '+f.name+'</div>需要 '+Math.max(2,f.ac-h.hit)+' 以上（D20 + '+h.hit+' ≥ '+f.ac+'）';
+  if(B.opts.tut){if(B.round===1)tip(0,'<b>練習戰</b>：這裡會一步一步教你。先按下 <b>⚔️ 擲骰攻擊</b>！');
+    else if(B.round===2)tip(0,'每一回合都要選行動。血少的時候可以 <b>🧪 喝藥水</b>，或 <b>🛡️ 擲骰防禦</b>：擲出 10 以上會完全擋下這一回合的攻擊並回血。');
+    else tip(0,'')}
+  else if(alive().length>1)tip(1,'有多隻敵人時，<b>點一下怪物</b>就能換攻擊目標。');else tip(0,'');
+  saveB('fight')}
+function attack(){var h=hero(),f=B.foes[B.target],need=clamp(f.ac-h.hit,2,20);
+  side('攻擊 '+f.name,'需要擲出 '+need+' 以上（'+(h.crit<20?h.crit+'–20':'20')+' 爆擊・1 大失誤）');
+  if(B.opts.tut)tip(0,'骰子在轉！<b>點一下骰子</b>（或按空白鍵）讓它停下。點數 '+sg(h.hit)+' ≥ 防 '+f.ac+' 就打中。');
   rollD20('點擊骰子攻擊！',function(r){resolveAttack(r,f,h)})}
 function resolveAttack(r,f,h){var tot=r+h.hit;
-  var reroll=function(){B.luck--;log('🍀 你用幸運重擲了命運之骰！');rollD20('幸運重擲！點擊骰子！',function(r2){resolveAttack(r2,f,h)})};
-  if(r===1){log('🎲 擲出 1——大失誤！武器脫手，敵人逮到破綻。','fail');$('side').innerHTML='<div class="big fail">1 大失誤</div>';B.exposed=1;return offerLuck(reroll,enemyTurn)}
-  if(r>=h.crit||tot>=f.ac){var crit=r>=h.crit;var n=crit?h.n*2:h.n;
-    $('side').innerHTML='<div class="big'+(crit?' crit':'')+'">'+(crit?r+' 爆擊！':r+' + '+h.hit+' = '+tot+' 命中')+'</div>';
-    setTimeout(function(){rollDice(n,h.d,function(s){var dmg=s+h.dmg;f.hp-=dmg;var el=$('foe'+B.foes.indexOf(f));if(el){el.classList.add('hit')}crit?sCrit():sHit();
-      log('🎲 '+r+(crit?'【爆擊】':'')+' → 你對'+f.name+'造成 <b>'+dmg+'</b> 傷害（'+n+'d'+h.d+'='+s+' +'+h.dmg+'）',crit?'crit':'');
-      $('side').innerHTML+='<div class="big">−'+dmg+'</div>';drawFoes();if(f.hp<=0)log('💀 '+f.name+' 倒下了！');setTimeout(enemyTurn,700)})},350);
-  }else{log('🎲 '+r+' + '+h.hit+' = '+tot+'，沒有命中（需要 '+f.ac+'）');$('side').innerHTML='<div class="big">'+tot+' 落空</div>';offerLuck(reroll,enemyTurn)}}
-function offerLuck(reroll,next){if(B.luck>0){acts([['🍀 用幸運重擲（剩 '+B.luck+'）',reroll,'gold'],['接受結果',next]])}else setTimeout(next,700)}
-function defend(){acts([]);$('side').innerHTML='<div class="big">防禦</div>擲 10 以上：完全格擋下一波攻擊並回復 HP';
-  rollD20('點擊骰子防禦！',function(r){if(r>=10){B.guard=2;var heal=rnd(8)+S.lv;setHp(hp()+heal);log('🛡️ 擲出 '+r+'，架好盾牌！格擋下一波攻擊，回復 '+heal+' HP。','crit')}else{B.guard=1;log('🛡️ 擲出 '+r+'，勉強擋住（防禦 +3）。')}heroBar();setTimeout(enemyTurn,700)})}
-function potion(){acts([]);var id=count('greater_potion')>0&&hp()<maxHp()-100?'greater_potion':(count('health_potion')>0?'health_potion':'greater_potion');var heal=id==='greater_potion'?160:60;
-  addItem(id,-1);setHp(hp()+heal);tone(520,.2,'sine',.06);log('🧪 喝下'+DATA.items[id].name+'，回復 '+heal+' HP。');heroBar();setTimeout(enemyTurn,600)}
-function flee(){acts([]);var need=8+B.floor*2;$('side').innerHTML='<div class="big">逃跑</div>需要擲出 '+need+' 以上';
-  rollD20('點擊骰子逃跑！',function(r){var tot=r+Math.floor(S.lv/3);if(tot>=need){log('🏃 擲出 '+r+'，成功逃走了！');setTimeout(function(){endBattle('fled')},700)}else{log('🏃 擲出 '+r+'，被攔住了！');setTimeout(enemyTurn,600)}})}
-function enemyTurn(){if(!alive().length)return victory();var q=alive().slice(),h=hero();
-  (function next(){if(!q.length){B.round++;if(B.guard)B.guard=0;B.exposed=0;heroBar();if(hp()<=0)return defeat();return playerTurn()}
-    var f=q.shift();f.turn++;var times=1,sp=f.sp||'';
+  var reroll=function(){B.luck--;heroBar();log('🍀 用幸運重擲！');rollD20('幸運重擲！點擊骰子！',function(r2){resolveAttack(r2,f,h)})};
+  if(r===1){var m='擲出 1——大失誤！敵人下一擊必中';side('1　大失誤！',m,'fail');log('🎲 '+m,'fail');B.exposed=1;
+    if(B.opts.tut)tip(0,'擲出 1 是大失誤。別擔心，你有 <b>🍀 幸運</b>：可以重擲一次，或接受結果。');return offerLuck(reroll,enemyTurn)}
+  if(r>=h.crit||tot>=f.ac){var crit=r>=h.crit,n=crit?h.n*2:h.n;
+    var head='<div class="big '+(crit?'crit':'ok')+'">'+(crit?r+'　爆擊！':r+' '+sg(h.hit)+' = '+tot+'　命中')+'</div>';
+    if(B.opts.tut)tip(0,crit?'<b>爆擊！</b>傷害骰數量加倍。':'打中了！接著自動擲 <b>'+h.wname+'的傷害骰 '+h.n+'d'+h.d+'</b>，再加上力量 '+h.dmg+'。');
+    setTimeout(function(){rollDice(n,h.d,head,function(s){var dmg=s+h.dmg;f.hp-=dmg;var el=$('foe'+B.foes.indexOf(f));if(el)el.classList.add('hit');crit?sCrit():sHit();
+      var m=(crit?'爆擊！':'')+r+' '+sg(h.hit)+' = '+tot+' 命中 → '+f.name+' −'+dmg+'（'+n+'d'+h.d+'='+s+' + '+h.dmg+'）';
+      $('side').innerHTML+='<div class="res '+(crit?'crit':'ok')+'">'+f.name+' −'+dmg+'</div>';log('⚔️ '+m,crit?'crit':'');drawFoes();
+      if(f.hp<=0)log('💀 '+f.name+' 倒下了！');saveB('foe');setTimeout(enemyTurn,800)})},350);
+  }else{var m2=r+' '+sg(h.hit)+' = '+tot+'，低於防 '+f.ac+'，沒打中';side(r+' '+sg(h.hit)+' = '+tot,'落空（需要 '+f.ac+'）');log('⚔️ '+m2);
+    if(B.opts.tut)tip(0,'沒打中。你可以用 <b>🍀 幸運</b>重擲一次（每場戰鬥次數有限），或接受結果。');offerLuck(reroll,enemyTurn)}}
+function offerLuck(reroll,next){saveB('foe');if(B.luck>0){acts([['🍀 用幸運重擲（剩 '+B.luck+'）',reroll,'gold'],['接受結果',next]])}else setTimeout(next,800)}
+function defend(){side('防禦','擲出 10 以上：完全擋下這一回合並回血');if(B.opts.tut)tip(0,'<b>點一下骰子</b>。10 以上完全格擋，否則防禦 +3。');
+  rollD20('點擊骰子防禦！',function(r){if(r>=10){B.guard=2;var heal=rnd(8)+S.lv;setHp(hp()+heal);var m=r+'　架好盾牌！完全格擋，回復 '+heal+' HP';side(r+'　格擋成功','完全擋下這一回合，回復 '+heal+' HP','ok');log('🛡️ '+m,'crit')}
+    else{B.guard=1;side(r+'　勉強擋住','這一回合防禦 +3');log('🛡️ '+r+'　勉強擋住（防禦 +3）')}heroBar();saveB('foe');setTimeout(enemyTurn,800)})}
+function potion(){var id=count('greater_potion')>0&&hp()<maxHp()-100?'greater_potion':(count('health_potion')>0?'health_potion':'greater_potion');var heal=id==='greater_potion'?160:60;
+  addItem(id,-1);setHp(hp()+heal);tone(520,.2,'sine',.06);side('🧪 '+DATA.items[id].name,'回復 '+heal+' HP','ok');log('🧪 喝下'+DATA.items[id].name+'，回復 '+heal+' HP');heroBar();saveB('foe');setTimeout(enemyTurn,700)}
+function flee(){var need=8+B.floor*2,bon=Math.floor(S.lv/3);side('逃跑','需要擲出 '+Math.max(2,need-bon)+' 以上');
+  rollD20('點擊骰子逃跑！',function(r){if(r+bon>=need){side(r+'　成功逃走！','','ok');log('🏃 '+r+'　成功逃走了');setTimeout(function(){endBattle('fled')},800)}else{side(r+'　被攔住了','',  'fail');log('🏃 '+r+'　逃跑失敗');setTimeout(enemyTurn,700)}})}
+function enemyTurn(){if(!alive().length)return victory();acts([]);turn('foe');var q=alive().filter(function(f){return f.acted!==B.round}),h=hero();
+  if(B.opts.tut&&!B.tipped.foe){B.tipped.foe=1;tip(0,'換敵人擲骰了（紅色骰子）。牠的點數＋命中 ≥ 你的防禦 <b>'+h.ac+'</b> 就會傷到你。')}
+  (function next(){if(!q.length){B.round++;B.guard=0;B.exposed=0;heroBar();if(hp()<=0)return defeat();return playerTurn()}
+    var f=q.shift();f.turn++;f.acted=B.round;var times=1,sp=f.sp||'';
     if(sp==='double'&&f.turn%3===0)times=2;if(f.boss&&f.turn%4===0)times=2;
-    if(sp==='regen'&&f.hp<f.max){var rg=Math.round(f.max*0.05);f.hp=Math.min(f.max,f.hp+rg);log('🩸 '+f.name+' 再生了 '+rg+' HP。');drawFoes()}
+    if(sp==='regen'&&f.hp<f.max){var rg=Math.round(f.max*0.05);f.hp=Math.min(f.max,f.hp+rg);log('🩸 '+f.name+' 再生 '+rg+' HP');drawFoes()}
     if(f.boss&&!f.phase2&&f.hp<=f.max/2){f.phase2=true;f.dmgAdd=(f.dmgAdd||0)+10;f.hit+=2;log('👑 '+f.name+'：「你竟敢……！嚐嚐真正的死亡吧！」——第二階段','crit')}
     if(sp==='enrage'&&!f.rage&&f.hp<=f.max*0.4){f.rage=true;f.dmgAdd=(f.dmgAdd||0)+Math.round(f.avg*0.5);log('😡 '+f.name+' 發狂了！')}
     (function swing(k){if(k>=times||hp()<=0)return setTimeout(next,450);
-      $('side').innerHTML='<div class="big">'+f.name+' 的回合</div>'+(times>1?(f.boss?'骨骸風暴！連續攻擊':'連續攻擊！'):'');
-      autoD20(function(r){var ac=h.ac+(B.guard===1?3:0);var tot=r+f.hit;
-        if(B.guard===2){log('🛡️ '+f.name+' 的攻擊被你完全格擋！');return setTimeout(function(){swing(k+1)},500)}
-        if(r===1||(r!==20&&tot<ac&&!B.exposed)){log('🎲 '+f.name+' 擲出 '+r+(r===1?'——失手了！':(f.hit<0?' − '+(-f.hit):' + '+f.hit)+' = '+tot+'，沒打中你（防禦 '+ac+'）'));return setTimeout(function(){swing(k+1)},500)}
-        var dmg=dice(f.dmg)+(f.dmgAdd||0);if(r===20){dmg*=2}setHp(hp()-dmg);sHit();
-        if(sp==='drain'){var dr=Math.round(dmg/3);f.hp=Math.min(f.max,f.hp+dr);drawFoes()}
-        log('🎲 '+f.name+' 擲出 '+r+(r===20?'【爆擊】':'')+' → 你受到 <b>'+dmg+'</b> 傷害'+(sp==='drain'?'（被吸走生命）':''),r===20?'fail':'');heroBar();
-        setTimeout(function(){swing(k+1)},550)})})(0)})()}
-function victory(){acts([]);$('title').textContent='勝利！';var xp=0,gold=0;B.foes.forEach(function(f){xp+=f.xp;gold+=f.gold});S.kills+=B.foes.length;
-  $('side').innerHTML='<div class="big crit">勝利！</div>擲戰利品骰：<div class="tbl"><span>1–9　金幣</span><span>10–16　金幣＋生命藥水</span><span>17–19　金幣＋高級藥水</span><span>20　金幣 ×2＋高級藥水 ×2</span></div>';
-  log('🏆 獲得 '+xp+' 經驗值。','crit');
-  rollD20('擲戰利品骰！',function(r){var t=$('side').querySelectorAll('.tbl span');var i=r<=9?0:r<=16?1:r<=19?2:3;if(t[i])t[i].className='on';
-    var g=gold+rnd(6)*B.floor;if(r===20)g*=2;addItem('coin',g);var msg='💰 金幣 +'+g;
+      side(f.name+' 擲骰',times>1?(f.boss?'骨骸風暴！連續攻擊':'連續攻擊！'):'');
+      foeD20(function(r){var ac=h.ac+(B.guard===1?3:0),tot=r+f.hit;
+        if(B.guard===2){side(r+'　被你擋下','完全格擋！','ok');log('🛡️ '+f.name+' 擲出 '+r+'，被你完全格擋');saveB('foe');return setTimeout(function(){swing(k+1)},700)}
+        if(r===1||(r!==20&&tot<ac&&!B.exposed)){var mm=r===1?'擲出 1，失手了':'擲出 '+r+' '+sg(f.hit)+' = '+tot+'，低於你的防禦 '+ac;side(r+(r===1?'　失手':' '+sg(f.hit)+' = '+tot),r===1?'敵人失手了':'沒打中你（你的防禦 '+ac+'）','ok');log('🎲 '+f.name+' '+mm);saveB('foe');return setTimeout(function(){swing(k+1)},700)}
+        var dmg=dice(f.dmg)+(f.dmgAdd||0);if(r===20)dmg*=2;if(B.opts.tut)dmg=Math.max(1,Math.round(dmg/2));
+        setHp(B.opts.tut?Math.max(1,hp()-dmg):hp()-dmg);sHit();
+        if(sp==='drain'){f.hp=Math.min(f.max,f.hp+Math.round(dmg/3));drawFoes()}
+        var why=r===20?'爆擊！':(B.exposed&&tot<ac?'趁你大失誤，':'')+r+' '+sg(f.hit)+' = '+tot+' 命中';
+        side(r===20?'20　爆擊！':r+' '+sg(f.hit)+' = '+tot,'你受到 '+dmg+' 傷害'+(sp==='drain'?'（被吸走生命）':''),'fail');
+        log('🎲 '+f.name+' '+why+' → 你 −'+dmg,r===20?'fail':'');heroBar();saveB('foe');
+        setTimeout(function(){swing(k+1)},800)})})(0)})()}
+function victory(){acts([]);turn('');$('turn').innerHTML='';$('title').textContent='勝利！';saveB('victory');var xp=0,gold=0;B.foes.forEach(function(f){xp+=f.xp;gold+=f.gold});
+  idleDie();side('勝利！','擲戰利品骰：','crit');$('side').innerHTML+='<div class="tbl"><span>1–9　金幣</span><span>10–16　金幣＋生命藥水</span><span>17–19　金幣＋高級藥水</span><span>20　金幣 ×2＋高級藥水 ×2</span></div>';
+  if(B.opts.tut)tip(0,'打贏了！最後<b>擲戰利品骰</b>：點數越高，獎勵越好。');else tip(0,'');
+  rollD20('擲戰利品骰！',function(r){var t=$('side').querySelectorAll('.tbl span'),i=r<=9?0:r<=16?1:r<=19?2:3;if(t[i])t[i].className='on';
+    var g=gold+rnd(6)*Math.max(1,B.floor);if(r===20)g*=2;addItem('coin',g);var msg='金幣 +'+g;
     if(i===1){addItem('health_potion',1);msg+='、生命藥水 +1'}if(i===2){addItem('greater_potion',1);msg+='、高級生命藥水 +1'}if(i===3){addItem('greater_potion',2);msg+='、高級生命藥水 +2'}
-    log('🎲 '+r+' → '+msg,r===20?'crit':'');gainXp(xp,function(){acts([['繼續冒險',function(){endBattle('won')},'gold']])})})}
-function gainXp(x,cb){S.xp+=x;var ups=0;while(S.xp>=xpNeed()){S.xp-=xpNeed();S.lv++;ups++}saveStats();drawChip();
-  if(!ups)return cb();(function g(n){if(n>=ups)return cb();lvQueue++;pumpLv();growth(function(){g(n+1)})})(0)}
+    S.kills+=B.foes.length;log('🎲 戰利品骰 '+r+' → '+msg+'；經驗 +'+xp,r===20?'crit':'');gainXp(xp);saveB('done');
+    afterGrowth(function(){if(B&&B.opts.tut)tip(0,'練習結束！之後每升一級都會<b>擲成長骰</b>，決定你變強的方向。');acts([['繼續冒險',function(){endBattle('won')},'gold']])})})}
+function gainXp(x){S.xp+=x;while(S.xp>=xpNeed()){S.xp-=xpNeed();S.lv++;S.pg++;S.lvq++}saveStats();drawChip();pumpLv()}
+// pending growth rolls are stored in S.pg so a reload never loses them
 var GROW=[[3,'鐵壁','防禦 +1',function(){S.ac++}],[7,'蠻力','傷害 +2',function(){S.str+=2}],[11,'精準','命中 +1',function(){S.hit++}],[14,'幸運','每場戰鬥幸運重擲 +1',function(){S.luck++}],[17,'狂戰','傷害 +1、命中 +1',function(){S.str++;S.hit++}],[19,'致命','爆擊範圍 +1',function(){S.crit=Math.min(4,S.crit+1)}],[20,'命運眷顧','全部能力提升！',function(){S.ac++;S.hit++;S.str+=2;S.luck++}]];
-function growth(cb,title){mode=mode==='idle'?'grow':mode;showPanel();$('title').textContent=title||('升級！Lv '+S.lv);acts([]);var used=false;
+function afterGrowth(cb){if(S.pg<=0)return cb();growth(function(){afterGrowth(cb)},'升級！Lv '+(S.lv-S.pg+1))}
+function growth(cb,title){growing=true;showPanel();$('title').textContent=title;$('turn').innerHTML='';acts([]);idleDie();var used=false;
   var tbl='<div class="tbl">'+GROW.map(function(g,i){var lo=i?GROW[i-1][0]+1:1;return '<span>'+lo+(lo!==g[0]?'–'+g[0]:'')+'　'+g[1]+'：'+g[2]+'</span>'}).join('')+'</div>';
-  $('side').innerHTML='<div class="big crit">成長骰</div>'+tbl;log('✨ '+(title||'升級了！最大 HP 提升。擲出成長骰決定你的成長！'),'crit');
+  side('成長骰','','crit');$('side').innerHTML+=tbl;tip(2,'<b>升級了！</b>最大 HP 提升。點骰子擲<b>成長骰</b>決定這次變強的方向，不滿意可以免費重擲一次。');
   (function go(){rollD20('擲成長骰！',function(r){var i=0;while(r>GROW[i][0])i++;var sp=$('side').querySelectorAll('.tbl span');sp.forEach(function(x){x.className=''});sp[i].className='on';
-    var apply=function(){GROW[i][3]();saveStats();drawChip();heroBar();log('🎲 '+r+' → 【'+GROW[i][1]+'】'+GROW[i][2],'crit');setTimeout(cb,500)};
-    if(!used&&r<20){acts([['接受【'+GROW[i][1]+'】',apply,'gold'],['免費重擲一次',function(){used=true;acts([]);go()}]])}else apply()})})()}
-function pumpLv(){if(lvWait||lvQueue<=0)return;if(V.dz_lvup==='true')return;lvWait=true;lvQueue--;set('dz_lvup','true')}
-function endBattle(res){var c=curCmd.split('|'),kv=c[1];
-  if(res==='won'&&kv){setFlag(kv)}
-  set('dz_res',res);B=null;finish()}
+    var apply=function(){GROW[i][3]();S.pg=Math.max(0,S.pg-1);saveStats();drawChip();heroBar();log('✨ 成長骰 '+r+' →【'+GROW[i][1]+'】'+GROW[i][2],'crit');growing=false;setTimeout(cb,500)};
+    if(!used&&r<20){acts([['接受【'+GROW[i][1]+'】',apply,'gold'],['免費重擲一次',function(){used=true;go()}]])}else apply()})})()}
+function pumpLv(){if(lvWait||S.lvq<=0)return;if(V.dz_lvup==='true')return;lvWait=true;S.lvq--;saveStats();set('dz_lvup','true')}
+function endBattle(res){var after=B&&B.after,kv=curCmd.split('|')[1];
+  if(res==='won'&&after){B=null;set('dz_res','won');if(after.kind==='chest'){addItem('coin',after.gold);log('寶箱怪吐出了 '+after.gold+' 金幣')}if(after.kind==='altar'&&after.kv)setFlag(after.kv);return finish()}
+  if(res==='won'&&kv)setFlag(kv);set('dz_res',res);B=null;finish()}
 function setFlag(n){var cur=V[n];set(n,typeof cur==='boolean'?true:'true')}
-function finish(){curCmd='';set('dz_cmd','');showChip()}
-function defeat(){acts([]);$('title').textContent='你倒下了……';var g=count('coin'),lost=Math.floor(g/3);
-  $('side').innerHTML='<div class="big fail">敗北</div>命運之骰把你帶回營地。<br>掉落了 '+lost+' 金幣。';log('💀 你的意識逐漸模糊……','fail');
-  acts([['回到營地',function(){addItem('coin',-lost);setHp(1);set('dz_res','lost');set('dz_dead','true');B=null;finish()},'gold']])}
+function finish(){curCmd='';B=null;tip(0,'');clearB();set('dz_cmd','');showChip()}
+function defeat(){acts([]);$('turn').innerHTML='';$('title').textContent='你倒下了……';var g=count('coin'),lost=Math.floor(g/3);saveB('defeat');
+  side('敗北','命運之骰把你帶回營地，掉落了 '+lost+' 金幣。','fail');log('💀 你的意識逐漸模糊……','fail');
+  acts([['回到營地',function(){addItem('coin',-lost);setHp(1);set('dz_res','lost');set('dz_dead','true');finish()},'gold']])}
 // ---------- altar / chest ----------
 function table(rows){return '<div class="tbl">'+rows.map(function(r){return '<span>'+r+'</span>'}).join('')+'</div>'}
 function pick(r,cuts){var i=0;while(r>cuts[i])i++;return i}
-function altar(kv,floor){mode='altar';showPanel();var F=DATA.floors[floor];$('foes').innerHTML='<div class="foe"><img src="'+DATA.img.dice20+'" alt=""><div>命運祭壇</div></div>';$('log').innerHTML='';heroBar();
-  $('title').textContent='命運祭壇';var rows=['1　詛咒：怪物伏擊','2–6　祝福：HP 全滿','7–13　財富：金幣與藥水','14–19　啟示：獲得一次成長骰','20　神諭：升一級＋傳說裝備'];
-  $('side').innerHTML='<div class="big">擲出命運！</div>'+table(rows);acts([]);
-  rollD20('點擊骰子，擲出命運！',function(r){var i=pick(r,[1,6,13,19,20]);$('side').querySelectorAll('.tbl span')[i].className='on';var done=function(){setFlag(kv);finish()};
-    if(i===0){log('🎲 1——詛咒！黑霧中竄出怪物！','fail');setTimeout(function(){startBattle([F.strong,F.strong],floor,{title:'祭壇的詛咒',noflee:true});B.after=done},900);return}
-    if(i===1){setHp(maxHp());log('🎲 '+r+'——溫暖的光芒治好了你的傷。','crit');acts([['離開祭壇',done,'gold']])}
-    if(i===2){var g=Math.round(F.gold*1.5);addItem('coin',g);addItem(F.pot,1);log('🎲 '+r+'——金幣 +'+g+'、'+DATA.items[F.pot].name+' +1');acts([['離開祭壇',done,'gold']])}
-    if(i===3){log('🎲 '+r+'——古老的啟示流入腦海！');setTimeout(function(){growth(function(){acts([['離開祭壇',done,'gold']])},'祭壇的啟示')},700)}
-    if(i===4){log('🎲 20——神諭降臨！','crit');addItem(F.gearB,1);addItem('phoenix_feather',1);setTimeout(function(){gainXp(xpNeed()-S.xp,function(){log('🎁 獲得 '+DATA.items[F.gearB].name+'、鳳凰羽毛！記得到選單裝備。','crit');acts([['離開祭壇',done,'gold']])})},600)}})}
-function chest(kv,floor){mode='chest';showPanel();var F=DATA.floors[floor];$('foes').innerHTML='<div class="foe"><img src="'+DATA.img.chest+'" alt=""><div>寶箱</div></div>';$('log').innerHTML='';heroBar();
-  $('title').textContent='寶箱';var rows=['1　寶箱怪！','2–9　金幣','10–17　藥水＋金幣','18–19　'+DATA.items[F.gearA].name,'20　'+DATA.items[F.gearB].name+'＋金幣'];
-  $('side').innerHTML='<div class="big">開箱骰</div>'+table(rows);acts([]);
-  rollD20('點擊骰子開箱！',function(r){var i=pick(r,[1,9,17,19,20]);$('side').querySelectorAll('.tbl span')[i].className='on';var done=function(){finish()};
-    if(i===0){log('🎲 1——寶箱張開了血盆大口！','fail');setTimeout(function(){startBattle([F.strong],floor,{title:'寶箱怪！'});B.after=function(){addItem('coin',F.gold*2);finish()}},900);return}
+function openObject(title,img,label){mode='obj';B=null;showPanel();$('turn').innerHTML='';$('foes').innerHTML='<div class="foe"><img src="'+img+'" alt=""><div>'+label+'</div></div>';$('log').innerHTML='';heroBar();$('title').textContent=title;idleDie()}
+function altar(kv,floor){var F=DATA.floors[floor];openObject('命運祭壇',DATA.img.dice20,'命運祭壇');
+  side('擲出命運！','');$('side').innerHTML+=table(['1　詛咒：怪物伏擊','2–6　祝福：HP 全滿','7–13　財富：金幣與藥水','14–19　啟示：獲得一次成長骰','20　神諭：升一級＋傳說裝備']);
+  tip(3,'<b>命運祭壇</b>：點骰子擲 D20，點數決定獎勵——擲出 1 會被詛咒！');
+  rollD20('點擊骰子，擲出命運！',function(r){var i=pick(r,[1,6,13,19,20]);$('side').querySelectorAll('.tbl span')[i].className='on';setFlag(kv);
+    var leave=function(){acts([['離開祭壇',finish,'gold']])};
+    if(i===0){log('🎲 1——詛咒！黑霧中竄出怪物！','fail');setTimeout(function(){startBattle([F.strong,F.strong],floor,{title:'祭壇的詛咒',noflee:true});B.after={kind:'altar',kv:kv};saveB('fight')},900);return}
+    if(i===1){setHp(maxHp());log('🎲 '+r+'——溫暖的光芒治好了你的傷','crit');saveB('done');leave()}
+    if(i===2){var g=Math.round(F.gold*1.5);addItem('coin',g);addItem(F.pot,1);log('🎲 '+r+'——金幣 +'+g+'、'+DATA.items[F.pot].name+' +1');saveB('done');leave()}
+    if(i===3){log('🎲 '+r+'——古老的啟示流入腦海！');S.pg++;saveStats();saveB('done');setTimeout(function(){afterGrowth(leave)},700)}
+    if(i===4){log('🎲 20——神諭降臨！','crit');addItem(F.gearB,1);addItem('phoenix_feather',1);log('🎁 獲得 '+DATA.items[F.gearB].name+'、鳳凰羽毛！記得到選單裝備','crit');gainXp(xpNeed()-S.xp);saveB('done');setTimeout(function(){afterGrowth(leave)},600)}})}
+function chest(floor){var F=DATA.floors[floor];openObject('寶箱',DATA.img.chest,'寶箱');
+  side('開箱骰','');$('side').innerHTML+=table(['1　寶箱怪！','2–9　金幣','10–17　藥水＋金幣','18–19　'+DATA.items[F.gearA].name,'20　'+DATA.items[F.gearB].name+'＋金幣']);
+  tip(4,'<b>寶箱</b>也要擲骰：點數越高越好，擲出 1 是寶箱怪！');
+  rollD20('點擊骰子開箱！',function(r){var i=pick(r,[1,9,17,19,20]);$('side').querySelectorAll('.tbl span')[i].className='on';
+    if(i===0){log('🎲 1——寶箱張開了血盆大口！','fail');setTimeout(function(){startBattle([F.strong],floor,{title:'寶箱怪！'});B.after={kind:'chest',gold:F.gold*2};saveB('fight')},900);return}
     if(i===1){addItem('coin',F.gold);log('🎲 '+r+'——金幣 +'+F.gold)}
     if(i===2){addItem(F.pot,2);addItem('coin',Math.round(F.gold/2));log('🎲 '+r+'——'+DATA.items[F.pot].name+' +2、金幣 +'+Math.round(F.gold/2))}
-    if(i===3){addItem(F.gearA,1);log('🎲 '+r+'——獲得 '+DATA.items[F.gearA].name+'！記得到選單裝備。','crit')}
+    if(i===3){addItem(F.gearA,1);log('🎲 '+r+'——獲得 '+DATA.items[F.gearA].name+'！記得到選單裝備','crit')}
     if(i===4){addItem(F.gearB,1);addItem('coin',F.gold);log('🎲 20——傳說級的光芒！獲得 '+DATA.items[F.gearB].name+'！','crit')}
-    acts([['收下',done,'gold']])})}
-// battle 'after' hook for altar/chest battles
-var _end=endBattle;endBattle=function(res){if(B&&B.after&&res==='won'){var a=B.after;B=null;set('dz_res','won');return a()}return _end(res)};
+    saveB('done');acts([['收下',finish,'gold']])})}
+// ---------- resume after the HUD is reloaded ----------
+function resume(){var o=null;try{o=JSON.parse(V.dz_b||'')}catch(e){}
+  if(!o||o.cmd!==V.dz_cmd)return false;curCmd=o.cmd;
+  var restoreLog=function(){$('log').innerHTML='';(o.log||[]).forEach(function(l){log(l[0],l[1])})};
+  if(o.stage==='done'||o.stage==='defeat'||!o.B){ // the outcome was already applied: just let the player leave
+    mode='obj';showPanel();$('turn').innerHTML='';$('foes').innerHTML='';restoreLog();heroBar();idleDie();$('title').textContent='命運之骰';side('結果已記錄','');
+    if(o.stage==='defeat'){B=null;defeat();return true}
+    afterGrowth(function(){acts([['繼續冒險',function(){if(o.B){B=o.B;endBattle('won')}else finish()},'gold']])});return true}
+  B=o.B;restoreLog();openBattle();log('（戰鬥已恢復）');if(o.stage==='victory')victory();else if(o.stage==='foe')enemyTurn();else playerTurn();return true}
 // ---------- command dispatch ----------
 function onCmd(){var c=V.dz_cmd||'';if(!c||c===curCmd||mode!=='idle')return;curCmd=c;var p=c.split('|');
-  if(p[0]==='battle'){var ids=p[2].split(','),fl=isNaN(+p[3])?1:+p[3];startBattle(ids,fl,{noflee:p[4]==='noflee',title:p[5]||''})}
+  if(p[0]==='battle'){var ids=p[2].split(','),fl=isNaN(+p[3])?1:+p[3];startBattle(ids,fl,{noflee:p[4]==='noflee',title:p[5]||'',tut:p[6]==='tut'})}
   else if(p[0]==='altar')altar(p[1],isNaN(+p[2])?1:+p[2]);
-  else if(p[0]==='chest')chest(p[1],isNaN(+p[2])?1:+p[2]);
+  else if(p[0]==='chest')chest(isNaN(+p[2])?1:+p[2]);
   else if(p[0]==='heal'){setHp(maxHp());finish()}
   else finish()}
-addEventListener('message',function(e){var d=e.data||{};if(d.type!=='larch:hud:init'&&d.type!=='larch:hud:update')return;V=d.variables||{};S=stats();onMap=/^map-/.test(d.cardId||'');
-  if(!ready){ready=true;if(!/"lv"/.test(V.dz||''))saveStats();showChip()}
-  if(lvWait&&V.dz_lvup!=='true'){lvWait=false}pumpLv();
+// keyboard: Space / Enter stops the die or presses the highlighted button
+addEventListener('keydown',function(e){if(e.key!==' '&&e.key!=='Enter')return;e.preventDefault();if(busy)return;var d=$('die');if(d.onclick)return d.onclick();var b=$('acts').querySelector('button.gold:not([disabled])')||$('acts').querySelector('button:not([disabled])');if(b)b.click()});
+addEventListener('message',function(e){var d=e.data||{};if(d.type!=='larch:hud:init'&&d.type!=='larch:hud:update')return;V=d.variables||{};onMap=/^map-/.test(d.cardId||'');
+  if(!growing||!S)S=stats();
+  if(!ready){ready=true;if(!/"lv"/.test(V.dz||''))saveStats();if(!(V.dz_cmd&&resume()))showChip()}
+  if(lvWait&&V.dz_lvup!=='true')lvWait=false;pumpLv();
   if(mode==='idle')showChip();else heroBar();onCmd()});
 post({type:'larch:ready'});
 })();
