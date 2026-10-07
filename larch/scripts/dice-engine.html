@@ -54,6 +54,8 @@ button.gold{background:linear-gradient(180deg,#f2c230,#b5801c);color:#2a1a04;bor
 .tbl span{display:block;padding:0 6px;border-radius:5px}
 .tbl span.on{background:#ffe57a;color:#2a1a04;font-weight:700}
 .crit{color:#ffe57a!important}.fail{color:#ff7a6a!important}.ok{color:#9fe870!important}
+.foe .sp{font-size:10px;color:#ffb3a8;line-height:1.3;min-height:13px}
+#turn .rs{background:#1d3a2a;border-color:#43e1b3;color:#bfffe0}
 </style></head><body>
 <div id="chip"><img id="chipimg" alt=""><div class="t"><div id="chip1"></div><div id="chip2"></div><div class="xp"><i id="chipxp"></i></div></div></div>
 <div id="panel" tabindex="0"><h2 id="title"></h2><div id="turn"></div><div id="foes"></div><div id="mid"><div id="die"></div><div id="side"></div></div>
@@ -63,7 +65,16 @@ button.gold{background:linear-gradient(180deg,#f2c230,#b5801c);color:#2a1a04;bor
 <script>
 (function(){
 var DATA=__DATA__;
-var V={},onMap=true,ready=false,busy=false,curCmd='',mode='idle',S=null,B=null,lvWait=false,growing=false;
+/* ======================================================================
+   命運骰子引擎
+   Every point where the game waits for the player is saved to the project
+   variable dz_b (encounter) or dz (hero), and every random result is
+   decided and written in the same synchronous step as the click that made
+   it. Animations only show results that are already saved, so the HUD can
+   be rebuilt by the host at any moment and continue from the same place
+   without re-rolling, auto-choosing, or paying anything twice.
+   ====================================================================== */
+var V={},onMap=true,ready=false,busy=false,curCmd='',mode='idle',S=null,B=null,E=null,lvWait=false,growing=false;
 var $=function(i){return document.getElementById(i)};
 function post(m){parent.postMessage(m,'*')}
 function set(n,v){V[n]=v;post({type:'larch:set',name:n,value:v})}
@@ -77,194 +88,247 @@ function sClack(){tone(220+Math.random()*80,.05,'square',.04)}
 function sHit(){tone(140,.12,'sawtooth',.07)}
 function sCrit(){tone(660,.1,'square',.06);setTimeout(function(){tone(990,.18,'square',.06)},90)}
 function sFail(){tone(110,.3,'triangle',.08)}
-// ---------- persistent hero state ----------
+// ---------- hero (dz) ----------
 function stats(){var s={};try{s=JSON.parse(V.dz||'{}')||{}}catch(e){}
   var d={lv:1,xp:0,hit:0,str:0,ac:0,crit:0,luck:0,kills:0,pg:0,lvq:0,tips:0};for(var k in d)if(typeof s[k]!=='number')s[k]=d[k];return s}
 function saveStats(){set('dz',JSON.stringify(S))}
-function inv(){try{return JSON.parse(V.inventory||'[]')||[]}catch(e){return[]}}
-function count(id){var c=0;inv().forEach(function(x){if(x.id===id)c+=x.count||0});return c}
-function addItem(id,n){var a=inv(),f=null;a.forEach(function(x){if(x.id===id)f=x});
-  if(f){f.count=Math.max(0,(f.count||0)+n)}else if(n>0){var t=DATA.items[id];if(!t)return;var e=JSON.parse(JSON.stringify(t));e.count=n;a.push(e)}
-  a=a.filter(function(x){return (x.count||0)>0});set('inventory',JSON.stringify(a))}
+// ---------- inventory: the bag is shared with Larch (same JSON as the shop and the bag screen) ----------
+// Larch reads an entry's amount as count ?? q ?? 1. Only the entry being changed is touched;
+// every other entry, field and the order are kept exactly as they were.
+function qty(x){var c=x.count!=null?x.count:(x.q!=null?x.q:1);c=Number(c);return isFinite(c)?c:0}
+function setQty(x,n){if(x.count!=null||x.q==null)x.count=n;if(x.q!=null)x.q=n}
+function inv(){try{var a=JSON.parse(V.inventory||'[]');return Array.isArray(a)?a:null}catch(e){return null}}
+function count(id){var a=inv()||[],c=0;a.forEach(function(x){if(x&&String(x.id)===id)c+=Math.max(0,qty(x))});return c}
+function addItem(id,n){n=Math.round(n);if(!n)return true;var a=inv();if(!a)return false; // unreadable bag: never overwrite it
+  if(n>0){var f=null;a.forEach(function(x){if(!f&&x&&String(x.id)===id)f=x});
+    if(f)setQty(f,qty(f)+n);else{var t=DATA.items[id];if(!t)return false;var e=JSON.parse(JSON.stringify(t));e.count=n;a.push(e)}}
+  else{var need=-n;for(var i=0;i<a.length&&need>0;i++){var x=a[i];if(!x||String(x.id)!==id)continue;var have=Math.max(0,qty(x)),take=Math.min(have,need);need-=take;
+      if(have-take>0)setQty(x,have-take);else{a.splice(i,1);i--}}}
+  set('inventory',JSON.stringify(a));return true}
 function equip(){var e={};try{e=JSON.parse(V.rpgEquipment||'{}')||{}}catch(x){}return e}
 function weapon(){var e=equip();return DATA.weapons[e.weapon]||DATA.weapons.iron_sword}
 function armorAC(){var e=equip(),a=0;['armor','accessory'].forEach(function(k){var g=DATA.armors[e[k]];if(g)a+=g.ac});return a}
 function charmLuck(){var e=equip(),a=0;['armor','accessory'].forEach(function(k){var g=DATA.armors[e[k]];if(g)a+=(g.luck||0)});return a}
+// ---------- HP: one cap everywhere (same growth curve as the Larch hero) ----------
 function maxHp(){return Math.round(110+(S.lv-1)*450/19)}
-function hp(){return typeof V.rpgHp==='number'?V.rpgHp:Number(V.rpgHp)||0}
+function rawHp(){var v=typeof V.rpgHp==='number'?V.rpgHp:Number(V.rpgHp);return isFinite(v)?v:0}
+function hp(){return clamp(rawHp(),0,maxHp())}
 function setHp(v){set('rpgHp',clamp(Math.round(v),0,maxHp()))}
+function capHp(){if(rawHp()>maxHp())set('rpgHp',maxHp())}
 function hero(){var w=weapon(),lv=S.lv;return{hit:1+Math.floor(lv/2)+S.hit+(w.hit||0),n:w.n,d:w.d,dmg:3+S.str+Math.floor(lv/3)+(w.bonus||0),ac:10+armorAC()+S.ac+Math.floor(lv/4),crit:Math.max(16,20-S.crit),luck:1+S.luck+charmLuck(),wname:w.name}}
 function xpNeed(){return 20+S.lv*12}
-// ---------- persistent encounter state (survives the HUD being reloaded) ----------
-function saveB(stage){if(!curCmd)return;var o={cmd:curCmd,stage:stage||'fight',log:[].map.call($('log').children,function(d){return [d.innerHTML,d.className]})};
-  if(B){o.B={floor:B.floor,foes:B.foes,opts:B.opts,luck:B.luck,guard:B.guard,target:B.target,round:B.round,exposed:B.exposed,after:B.after,tipped:B.tipped}}
-  set('dz_b',JSON.stringify(o))}
-function clearB(){set('dz_b','')}
+// ---------- encounter state (dz_b) ----------
+function save(stage,pend){if(!curCmd)return;E={cmd:curCmd,stage:stage,pend:pend||null,B:B,log:[].map.call($('log').children,function(d){return [d.innerHTML,d.className]})};set('dz_b',JSON.stringify(E))}
+function clearB(){E=null;set('dz_b','')}
 // ---------- chip ----------
 function drawChip(){if(!S)return;var h=hero();$('chipimg').src=DATA.img.dice20;
-  $('chip1').innerHTML='<b>Lv '+S.lv+'</b> 命中+'+h.hit+' 傷害 '+h.n+'d'+h.d+'+'+h.dmg;
-  $('chip2').innerHTML='防禦 '+h.ac+' 爆擊 '+(h.crit<20?h.crit+'–20':'20')+' 幸運 '+h.luck;
+  $('chip1').innerHTML='<b>Lv '+S.lv+'</b> 經驗 '+S.xp+'/'+xpNeed()+' 命中+'+h.hit;
+  $('chip2').innerHTML='傷害 '+h.n+'d'+h.d+'+'+h.dmg+' 防禦 '+h.ac+' 幸運 '+h.luck;
   $('chipxp').style.width=clamp(S.xp/xpNeed()*100,0,100)+'%'}
 function showChip(){mode='idle';$('panel').style.display='none';if(!onMap){$('chip').style.display='none';resize(32,32);return}$('chip').style.display='flex';resize(222,56);drawChip()}
 function showPanel(){$('chip').style.display='none';$('panel').style.display='flex';resize(640,580);try{$('panel').focus({preventScroll:true})}catch(e){}}
 function log(t,c){var d=document.createElement('div');d.innerHTML=t;if(c)d.className=c;$('log').appendChild(d);while($('log').children.length>4)$('log').removeChild($('log').firstChild)}
 function acts(list){var a=$('acts');a.innerHTML='';list.forEach(function(x){var b=document.createElement('button');b.textContent=x[0];if(x[2])b.className=x[2];if(x[3])b.disabled=true;b.onclick=function(){if(busy)return;a.innerHTML='';x[1]()};a.appendChild(b)})}
 function heroBar(){var h=hero();$('heroimg').src=DATA.img.hero;$('herotxt').innerHTML='冒險者 Lv'+S.lv+'　HP <b>'+hp()+'</b> / '+maxHp()+'　防禦 '+h.ac+(B&&B.luck!=null?'　🍀 幸運 '+B.luck:'')+'　🧪 '+(count('health_potion')+count('greater_potion'));$('herohp').style.width=clamp(hp()/maxHp()*100,0,100)+'%'}
-function turn(who){if(!B){$('turn').innerHTML='';return}$('turn').innerHTML='<span>第 '+B.round+' 回合</span> <span class="'+(who==='me'?'me':'foe')+'">'+(who==='me'?'🟣 你的回合':'🔴 敵人的回合')+'</span>'}
+var resumed=false;
+function turn(who){if(!B||!who){$('turn').innerHTML=resumed?'<span class="rs">⟳ 已接續先前的進度</span>':'';return}
+  $('turn').innerHTML='<span>第 '+B.round+' 回合</span> <span class="'+(who==='me'?'me':'foe')+'">'+(who==='me'?'🟣 你的回合':'🔴 敵人的回合')+'</span>'+(resumed?' <span class="rs">⟳ 已接續</span>':'')}
 function side(big,res,cls){$('side').innerHTML='<div class="big '+(cls||'')+'">'+big+'</div>'+(res?'<div class="res '+(cls||'')+'">'+res+'</div>':'')}
-// tutorial tips (only in the practice fight, or the first time something happens)
 function tip(key,html){var el=$('tip');if(!html){el.style.display='none';return}
-  if(!(B&&B.opts.tut)&&key){var bit=1<<key;if(S.tips&bit){el.style.display='none';return}S.tips|=bit;saveStats()}
+  if(!(B&&B.opts&&B.opts.tut)&&key){var bit=1<<key;if(S.tips&bit){el.style.display='none';return}S.tips|=bit;saveStats()}
   el.innerHTML=html;el.style.display='block'}
-// ---------- the D20 ----------
+// ---------- dice ----------
 function idleDie(){var d=$('die');d.className='';d.innerHTML='<img src="'+DATA.img.q+'" alt="待擲的骰子">';d.onclick=null}
-function rollD20(hint,cb){ // rolling die; the player clicks (or presses Space) to stop it
-  var d=$('die');d.className='';d.innerHTML='<img src="'+DATA.img.rolling+'" alt="翻滾中的骰子"><div class="hint">'+(hint||'點擊骰子，讓它停下！')+'</div>';
+function showFace(r,foe){var d=$('die');d.className=foe?'foeroll':'';d.innerHTML='<img src="'+DATA.img.faces[r]+'" alt="'+r+'">';d.onclick=null}
+// The player stops the die. decide(r) runs synchronously at the click: it must apply and save the outcome.
+// then(r) runs after a short pause, to show it.
+function rollD20(hint,decide,then){var d=$('die');d.className='';d.innerHTML='<img src="'+DATA.img.rolling+'" alt="翻滾中的骰子"><div class="hint">'+(hint||'點擊骰子，讓它停下！')+'</div>';
   var t=setInterval(sClack,140);busy=false;var done=false;
-  d.onclick=function(){if(done)return;done=true;clearInterval(t);d.onclick=null;var r=rnd(20);d.innerHTML='<img src="'+DATA.img.faces[r]+'" alt="'+r+'">';if(r===20)sCrit();else if(r===1)sFail();else tone(330,.08,'square',.05);busy=true;setTimeout(function(){busy=false;cb(r)},450)}}
-function foeD20(cb){var d=$('die');d.className='foeroll';d.innerHTML='<img src="'+DATA.img.rolling+'" alt="">';d.onclick=null;busy=true;var t=setInterval(sClack,140);
-  setTimeout(function(){clearInterval(t);var r=rnd(20);d.innerHTML='<img src="'+DATA.img.faces[r]+'" alt="'+r+'">';busy=false;cb(r)},700)}
-function rollDice(n,d,head,cb){var s=$('side'),box=document.createElement('div'),els=[];
-  for(var i=0;i<n;i++){var e=document.createElement('span');e.className='dmgdie spin';e.textContent='?';box.appendChild(e);els.push(e)}
-  s.innerHTML=head+'<div style="font-size:12px;opacity:.85;margin-top:4px">傷害骰 '+n+'d'+d+'</div>';s.appendChild(box);busy=true;var t=setInterval(function(){els.forEach(function(e){e.textContent=rnd(d)});sClack()},70);
-  setTimeout(function(){clearInterval(t);var sum=0;els.forEach(function(e){var v=rnd(d);sum+=v;e.textContent=v;e.classList.remove('spin')});busy=false;cb(sum)},650)}
+  d.onclick=function(){if(done)return;done=true;clearInterval(t);var r=rnd(20);showFace(r);if(r===20)sCrit();else if(r===1)sFail();else tone(330,.08,'square',.05);
+    busy=true;var info=decide(r);setTimeout(function(){busy=false;then(r,info)},450)}}
+function spinDice(vals,d,head,cb){var s=$('side'),box=document.createElement('div'),els=[];
+  vals.forEach(function(){var e=document.createElement('span');e.className='dmgdie spin';e.textContent='?';box.appendChild(e);els.push(e)});
+  s.innerHTML=head+'<div style="font-size:12px;opacity:.85;margin-top:4px">傷害骰 '+vals.length+'d'+d+'</div>';s.appendChild(box);busy=true;var t=setInterval(function(){els.forEach(function(e){e.textContent=rnd(d)});sClack()},70);
+  setTimeout(function(){clearInterval(t);els.forEach(function(e,i){e.textContent=vals[i];e.classList.remove('spin')});busy=false;cb()},650)}
 function dice(spec){var m=/(\d+)d(\d+)([+-]\d+)?/.exec(spec);var s=0;for(var i=0;i<+m[1];i++)s+=rnd(+m[2]);return s+(m[3]?+m[3]:0)}
+function spText(f){var t=[];if(f.boss)t.push('半血進入第二階段・每 4 回合連擊');if(f.sp==='double')t.push('每 3 回合連擊');if(f.sp==='drain')t.push('攻擊會吸血');if(f.sp==='regen')t.push('每回合再生');if(f.sp==='enrage')t.push('HP ≤ 40% 發狂');return t.join('・')}
 // ---------- battle ----------
-function startBattle(ids,floor,opts){
-  B={floor:floor,foes:ids.map(function(id,i){var e=JSON.parse(JSON.stringify(DATA.enemies[id+'@'+floor]||DATA.enemies[id+'@5']));e.max=e.hp;e.turn=0;return e}),opts:opts||{},luck:hero().luck,guard:0,target:0,round:1,tipped:{}};
-  $('log').innerHTML='';openBattle();if(B.foes.some(function(f){return f.boss}))log(B.foes[0].intro||'','crit');playerTurn()}
+function startBattle(ids,floor,opts){capHp();
+  B={floor:floor,foes:ids.map(function(id){var e=JSON.parse(JSON.stringify(DATA.enemies[id+'@'+floor]||DATA.enemies[id+'@5']));e.max=e.hp;e.turn=0;e.acted=0;return e}),opts:opts||{},luck:hero().luck,guard:0,target:0,round:1};
+  $('log').innerHTML='';openBattle();if(B.foes.some(function(f){return f.boss}))log(B.foes[0].intro||'','crit');
+  if(B.opts.noflee)log('⚠️ 這場戰鬥不能逃跑。'+(spText(B.foes[0])?'特性：'+spText(B.foes[0]):''),'fail');playerTurn()}
 function openBattle(){mode='battle';showPanel();$('title').textContent=B.opts.title||('遭遇：'+B.foes.map(function(f){return f.name}).join('、'));drawFoes();heroBar()}
 function alive(){return B.foes.filter(function(f){return f.hp>0})}
-function drawFoes(){var w=$('foes');w.innerHTML='';B.foes.forEach(function(f,i){var d=document.createElement('div');d.className='foe'+(f.hp<=0?' dead':'')+(i===B.target&&f.hp>0&&alive().length>1?' tgt':'');d.id='foe'+i;
-  d.innerHTML='<span class="ac">防 '+f.ac+'</span><img src="'+f.img+'" alt="'+f.name+'" style="'+(f.boss?'width:100px;height:100px':'')+'"><div>'+(i===B.target&&f.hp>0&&alive().length>1?'▶ ':'')+f.name+'</div><div class="bar"><i style="width:'+clamp(f.hp/f.max*100,0,100)+'%"></i></div><div>'+Math.max(0,f.hp)+' / '+f.max+'</div>';
-  d.onclick=function(){if(f.hp>0&&!busy&&$('acts').children.length){B.target=i;drawFoes()}};w.appendChild(d)})}
+function drawFoes(){var w=$('foes');w.innerHTML='';var many=alive().length>1;B.foes.forEach(function(f,i){var d=document.createElement('div');d.className='foe'+(f.hp<=0?' dead':'')+(i===B.target&&f.hp>0&&many?' tgt':'');d.id='foe'+i;
+  d.innerHTML='<span class="ac">防 '+f.ac+'</span><img src="'+f.img+'" alt="'+f.name+'" style="'+(f.boss?'width:100px;height:100px':'')+'"><div>'+(i===B.target&&f.hp>0&&many?'▶ ':'')+f.name+(f.rage?' 😡':'')+(f.phase2?' 👑':'')+'</div><div class="bar"><i style="width:'+clamp(f.hp/f.max*100,0,100)+'%"></i></div><div>'+Math.max(0,f.hp)+' / '+f.max+'</div><div class="sp">'+spText(f)+'</div>';
+  d.onclick=function(){if(f.hp>0&&!busy&&$('acts').children.length&&E&&E.stage==='menu'){B.target=i;save('menu');drawFoes();playerTurn()}};w.appendChild(d)})}
 function playerTurn(){if(!alive().length)return victory();if(hp()<=0)return defeat();
   if(B.foes[B.target].hp<=0)B.target=B.foes.indexOf(alive()[0]);drawFoes();heroBar();turn('me');idleDie();
   var h=hero(),f=B.foes[B.target];side('你的回合','擲 D20 '+sg(h.hit)+'（命中）≥ '+f.name+'的防 '+f.ac+' 就打中');
-  var pots=count('greater_potion')+count('health_potion');
-  acts([['⚔️ 擲骰攻擊',attack,'gold'],['🛡️ 擲骰防禦',defend],['🧪 藥水 ('+pots+')',potion,'',pots<1],['🏃 擲骰逃跑',flee,'',!!B.opts.noflee]]);
+  var pots=count('health_potion')+count('greater_potion');save('menu');
+  acts([['⚔️ 擲骰攻擊',attack,'gold'],['🛡️ 擲骰防禦',defend],['🧪 藥水 ('+pots+')',potion,'',pots<1||hp()>=maxHp()],['🏃 擲骰逃跑',flee,'',!!B.opts.noflee]]);
   if(B.opts.tut){if(B.round===1)tip(0,'<b>練習戰</b>：這裡會一步一步教你。先按下 <b>⚔️ 擲骰攻擊</b>！');
     else if(B.round===2)tip(0,'每一回合都要選行動。血少的時候可以 <b>🧪 喝藥水</b>，或 <b>🛡️ 擲骰防禦</b>：擲出 10 以上會完全擋下這一回合的攻擊並回血。');
     else tip(0,'')}
-  else if(alive().length>1)tip(1,'有多隻敵人時，<b>點一下怪物</b>就能換攻擊目標。');else tip(0,'');
-  saveB('fight')}
-function attack(){var h=hero(),f=B.foes[B.target],need=clamp(f.ac-h.hit,2,20);
+  else if(alive().length>1)tip(1,'有多隻敵人時，<b>點一下怪物</b>就能換攻擊目標。');else tip(0,'')}
+function attack(){var h=hero(),f=B.foes[B.target],need=clamp(f.ac-h.hit,2,20);save('roll',{act:'attack'});
   side('攻擊 '+f.name,'需要擲出 '+need+' 以上（'+(h.crit<20?h.crit+'–20':'20')+' 爆擊・1 大失誤）');
   if(B.opts.tut)tip(0,'骰子在轉！<b>點一下骰子</b>（或按空白鍵）讓它停下。點數 '+sg(h.hit)+' ≥ 防 '+f.ac+' 就打中。');
-  rollD20('點擊骰子攻擊！',function(r){resolveAttack(r,f,h)})}
-function resolveAttack(r,f,h){var tot=r+h.hit;
-  var reroll=function(){B.luck--;heroBar();log('🍀 用幸運重擲！');rollD20('幸運重擲！點擊骰子！',function(r2){resolveAttack(r2,f,h)})};
-  if(r===1){var m='擲出 1——大失誤！敵人下一擊必中';side('1　大失誤！',m,'fail');log('🎲 '+m,'fail');B.exposed=1;
-    if(B.opts.tut)tip(0,'擲出 1 是大失誤。別擔心，你有 <b>🍀 幸運</b>：可以重擲一次，或接受結果。');return offerLuck(reroll,enemyTurn)}
-  if(r>=h.crit||tot>=f.ac){var crit=r>=h.crit,n=crit?h.n*2:h.n;
-    var head='<div class="big '+(crit?'crit':'ok')+'">'+(crit?r+'　爆擊！':r+' '+sg(h.hit)+' = '+tot+'　命中')+'</div>';
-    if(B.opts.tut)tip(0,crit?'<b>爆擊！</b>傷害骰數量加倍。':'打中了！接著自動擲 <b>'+h.wname+'的傷害骰 '+h.n+'d'+h.d+'</b>，再加上力量 '+h.dmg+'。');
-    setTimeout(function(){rollDice(n,h.d,head,function(s){var dmg=s+h.dmg;f.hp-=dmg;var el=$('foe'+B.foes.indexOf(f));if(el)el.classList.add('hit');crit?sCrit():sHit();
-      var m=(crit?'爆擊！':'')+r+' '+sg(h.hit)+' = '+tot+' 命中 → '+f.name+' −'+dmg+'（'+n+'d'+h.d+'='+s+' + '+h.dmg+'）';
-      $('side').innerHTML+='<div class="res '+(crit?'crit':'ok')+'">'+f.name+' −'+dmg+'</div>';log('⚔️ '+m,crit?'crit':'');drawFoes();
-      if(f.hp<=0)log('💀 '+f.name+' 倒下了！');saveB('foe');setTimeout(enemyTurn,800)})},350);
-  }else{var m2=r+' '+sg(h.hit)+' = '+tot+'，低於防 '+f.ac+'，沒打中';side(r+' '+sg(h.hit)+' = '+tot,'落空（需要 '+f.ac+'）');log('⚔️ '+m2);
-    if(B.opts.tut)tip(0,'沒打中。你可以用 <b>🍀 幸運</b>重擲一次（每場戰鬥次數有限），或接受結果。');offerLuck(reroll,enemyTurn)}}
-function offerLuck(reroll,next){saveB('foe');if(B.luck>0){acts([['🍀 用幸運重擲（剩 '+B.luck+'）',reroll,'gold'],['接受結果',next]])}else setTimeout(next,800)}
-function defend(){side('防禦','擲出 10 以上：完全擋下這一回合並回血');if(B.opts.tut)tip(0,'<b>點一下骰子</b>。10 以上完全格擋，否則防禦 +3。');
-  rollD20('點擊骰子防禦！',function(r){if(r>=10){B.guard=2;var heal=rnd(8)+S.lv;setHp(hp()+heal);var m=r+'　架好盾牌！完全格擋，回復 '+heal+' HP';side(r+'　格擋成功','完全擋下這一回合，回復 '+heal+' HP','ok');log('🛡️ '+m,'crit')}
-    else{B.guard=1;side(r+'　勉強擋住','這一回合防禦 +3');log('🛡️ '+r+'　勉強擋住（防禦 +3）')}heroBar();saveB('foe');setTimeout(enemyTurn,800)})}
+  rollD20('點擊骰子攻擊！',function(r){return decideAttack(r)},function(r,o){showAttack(o)})}
+function decideAttack(r){var h=hero(),f=B.foes[B.target],tot=r+h.hit;
+  if(r===1){save('luck',{r:r,fumble:1});return{kind:'fumble',r:r}}
+  if(r>=h.crit||tot>=f.ac){var crit=r>=h.crit,n=crit?h.n*2:h.n,vals=[],s=0;for(var i=0;i<n;i++){var v=rnd(h.d);vals.push(v);s+=v}
+    var dmg=s+h.dmg;f.hp-=dmg;var m=(crit?'爆擊！':'')+r+' '+sg(h.hit)+' = '+tot+' 命中 → '+f.name+' −'+dmg+'（'+n+'d'+h.d+'='+s+' + '+h.dmg+'）';
+    log('⚔️ '+m,crit?'crit':'');if(f.hp<=0)log('💀 '+f.name+' 倒下了！');save(alive().length?'foe':'loot');
+    return{kind:'hit',r:r,tot:tot,crit:crit,vals:vals,dmg:dmg,f:B.foes.indexOf(f),d:h.d}}
+  save('luck',{r:r,tot:tot});return{kind:'miss',r:r,tot:tot}}
+function showAttack(o){var h=hero(),f=B.foes[o.f!=null?o.f:B.target];
+  if(o.kind==='hit'){var head='<div class="big '+(o.crit?'crit':'ok')+'">'+(o.crit?o.r+'　爆擊！':o.r+' '+sg(h.hit)+' = '+o.tot+'　命中')+'</div>';
+    if(B.opts.tut)tip(0,o.crit?'<b>爆擊！</b>傷害骰數量加倍。':'打中了！接著擲 <b>'+h.wname+'的傷害骰 '+h.n+'d'+h.d+'</b>，再加上力量 '+h.dmg+'。');
+    spinDice(o.vals,o.d,head,function(){var el=$('foe'+o.f);drawFoes();if(el)el.classList.add('hit');o.crit?sCrit():sHit();
+      $('side').innerHTML+='<div class="res '+(o.crit?'crit':'ok')+'">'+f.name+' −'+o.dmg+'</div>';setTimeout(next,800)});return}
+  luckChoice()}
+function luckChoice(){var p=E.pend,h=hero(),f=B.foes[B.target];
+  if(p.fumble){side('1　大失誤！','接受的話，敵人下一擊必中','fail');if(B.opts.tut)tip(0,'擲出 1 是大失誤。別擔心，你有 <b>🍀 幸運</b>：可以重擲一次，或接受結果。')}
+  else{side(p.r+' '+sg(h.hit)+' = '+p.tot,'落空（需要 '+f.ac+'）');if(B.opts.tut)tip(0,'沒打中。你可以用 <b>🍀 幸運</b>重擲一次（每場戰鬥次數有限），或接受結果。')}
+  showFace(p.r);var accept=function(){var fum=p.fumble;log('⚔️ '+(fum?'擲出 1——大失誤！敵人下一擊必中':p.r+' '+sg(h.hit)+' = '+p.tot+'，低於防 '+f.ac+'，沒打中'),fum?'fail':'');if(fum)B.exposed=1;save('foe');next()};
+  if(B.luck>0)acts([['🍀 用幸運重擲（剩 '+B.luck+'）',function(){B.luck--;log('🍀 用幸運重擲！');save('roll',{act:'attack'});heroBar();
+      rollD20('幸運重擲！點擊骰子！',function(r){return decideAttack(r)},function(r,o){showAttack(o)})},'gold'],['接受結果',accept]]);
+  else accept()}
+function next(){if(!alive().length)return victory();enemyTurn()}
+function defend(){save('roll',{act:'defend'});side('防禦','擲出 10 以上：完全擋下這一回合並回血');if(B.opts.tut)tip(0,'<b>點一下骰子</b>。10 以上完全格擋，否則防禦 +3。');
+  rollD20('點擊骰子防禦！',function(r){var o={r:r};if(r>=10){B.guard=2;o.heal=rnd(8)+S.lv;setHp(hp()+o.heal);log('🛡️ '+r+'　架好盾牌！完全格擋，回復 '+o.heal+' HP','crit')}else{B.guard=1;log('🛡️ '+r+'　勉強擋住（防禦 +3）')}save('foe');return o},
+   function(r,o){if(o.heal)side(r+'　格擋成功','完全擋下這一回合，回復 '+o.heal+' HP','ok');else side(r+'　勉強擋住','這一回合防禦 +3');heroBar();setTimeout(next,800)})}
 function potion(){var id=count('greater_potion')>0&&hp()<maxHp()-100?'greater_potion':(count('health_potion')>0?'health_potion':'greater_potion');var heal=id==='greater_potion'?160:60;
-  addItem(id,-1);setHp(hp()+heal);tone(520,.2,'sine',.06);side('🧪 '+DATA.items[id].name,'回復 '+heal+' HP','ok');log('🧪 喝下'+DATA.items[id].name+'，回復 '+heal+' HP');heroBar();saveB('foe');setTimeout(enemyTurn,700)}
-function flee(){var need=8+B.floor*2,bon=Math.floor(S.lv/3);side('逃跑','需要擲出 '+Math.max(2,need-bon)+' 以上');
-  rollD20('點擊骰子逃跑！',function(r){if(r+bon>=need){side(r+'　成功逃走！','','ok');log('🏃 '+r+'　成功逃走了');setTimeout(function(){endBattle('fled')},800)}else{side(r+'　被攔住了','',  'fail');log('🏃 '+r+'　逃跑失敗');setTimeout(enemyTurn,700)}})}
-function enemyTurn(){if(!alive().length)return victory();acts([]);turn('foe');var q=alive().filter(function(f){return f.acted!==B.round}),h=hero();
-  if(B.opts.tut&&!B.tipped.foe){B.tipped.foe=1;tip(0,'換敵人擲骰了（紅色骰子）。牠的點數＋命中 ≥ 你的防禦 <b>'+h.ac+'</b> 就會傷到你。')}
-  (function next(){if(!q.length){B.round++;B.guard=0;B.exposed=0;heroBar();if(hp()<=0)return defeat();return playerTurn()}
-    var f=q.shift();f.turn++;f.acted=B.round;var times=1,sp=f.sp||'';
-    if(sp==='double'&&f.turn%3===0)times=2;if(f.boss&&f.turn%4===0)times=2;
-    if(sp==='regen'&&f.hp<f.max){var rg=Math.round(f.max*0.05);f.hp=Math.min(f.max,f.hp+rg);log('🩸 '+f.name+' 再生 '+rg+' HP');drawFoes()}
-    if(f.boss&&!f.phase2&&f.hp<=f.max/2){f.phase2=true;f.dmgAdd=(f.dmgAdd||0)+10;f.hit+=2;log('👑 '+f.name+'：「你竟敢……！嚐嚐真正的死亡吧！」——第二階段','crit')}
-    if(sp==='enrage'&&!f.rage&&f.hp<=f.max*0.4){f.rage=true;f.dmgAdd=(f.dmgAdd||0)+Math.round(f.avg*0.5);log('😡 '+f.name+' 發狂了！')}
-    (function swing(k){if(k>=times||hp()<=0)return setTimeout(next,450);
-      side(f.name+' 擲骰',times>1?(f.boss?'骨骸風暴！連續攻擊':'連續攻擊！'):'');
-      foeD20(function(r){var ac=h.ac+(B.guard===1?3:0),tot=r+f.hit;
-        if(B.guard===2){side(r+'　被你擋下','完全格擋！','ok');log('🛡️ '+f.name+' 擲出 '+r+'，被你完全格擋');saveB('foe');return setTimeout(function(){swing(k+1)},700)}
-        if(r===1||(r!==20&&tot<ac&&!B.exposed)){var mm=r===1?'擲出 1，失手了':'擲出 '+r+' '+sg(f.hit)+' = '+tot+'，低於你的防禦 '+ac;side(r+(r===1?'　失手':' '+sg(f.hit)+' = '+tot),r===1?'敵人失手了':'沒打中你（你的防禦 '+ac+'）','ok');log('🎲 '+f.name+' '+mm);saveB('foe');return setTimeout(function(){swing(k+1)},700)}
-        var dmg=dice(f.dmg)+(f.dmgAdd||0);if(r===20)dmg*=2;if(B.opts.tut)dmg=Math.max(1,Math.round(dmg/2));
-        setHp(B.opts.tut?Math.max(1,hp()-dmg):hp()-dmg);sHit();
-        if(sp==='drain'){f.hp=Math.min(f.max,f.hp+Math.round(dmg/3));drawFoes()}
-        var why=r===20?'爆擊！':(B.exposed&&tot<ac?'趁你大失誤，':'')+r+' '+sg(f.hit)+' = '+tot+' 命中';
-        side(r===20?'20　爆擊！':r+' '+sg(f.hit)+' = '+tot,'你受到 '+dmg+' 傷害'+(sp==='drain'?'（被吸走生命）':''),'fail');
-        log('🎲 '+f.name+' '+why+' → 你 −'+dmg,r===20?'fail':'');heroBar();saveB('foe');
-        setTimeout(function(){swing(k+1)},800)})})(0)})()}
-function victory(){acts([]);turn('');$('turn').innerHTML='';$('title').textContent='勝利！';saveB('victory');var xp=0,gold=0;B.foes.forEach(function(f){xp+=f.xp;gold+=f.gold});
-  idleDie();side('勝利！','擲戰利品骰：','crit');$('side').innerHTML+='<div class="tbl"><span>1–9　金幣</span><span>10–16　金幣＋生命藥水</span><span>17–19　金幣＋高級藥水</span><span>20　金幣 ×2＋高級藥水 ×2</span></div>';
+  if(!addItem(id,-1))return playerTurn();var before=hp();setHp(before+heal);var got=hp()-before;log('🧪 喝下'+DATA.items[id].name+'，回復 '+got+' HP');save('foe');
+  tone(520,.2,'sine',.06);side('🧪 '+DATA.items[id].name,'回復 '+got+' HP','ok');heroBar();setTimeout(next,700)}
+function flee(){var need=8+B.floor*2,bon=Math.floor(S.lv/3);save('roll',{act:'flee'});side('逃跑','需要擲出 '+Math.max(2,need-bon)+' 以上');
+  rollD20('點擊骰子逃跑！',function(r){var ok=r+bon>=need;log('🏃 '+r+(ok?'　成功逃走了':'　逃跑失敗'));save(ok?'fled':'foe');return ok},
+   function(r,ok){side(r+(ok?'　成功逃走！':'　被攔住了'),'',ok?'ok':'fail');setTimeout(function(){ok?endBattle('fled'):next()},800)})}
+// Each enemy's whole action (all its swings) is decided and saved at once, then shown.
+function enemyTurn(){acts([]);turn('foe');var h=hero();
+  if(B.opts.tut&&!B.tipFoe){B.tipFoe=1;tip(0,'換敵人擲骰了（紅色骰子）。牠的點數＋命中 ≥ 你的防禦 <b>'+h.ac+'</b> 就會傷到你。')}
+  var f=null;for(var i=0;i<B.foes.length;i++){var x=B.foes[i];if(x.hp>0&&x.acted!==B.round){f=x;break}}
+  if(!f){B.round++;B.guard=0;B.exposed=0;if(hp()<=0)return defeat();save('menu');return playerTurn()}
+  if(hp()<=0)return defeat();
+  var res=decideFoe(f,h);save('foe');showFoe(f,res,0,function(){setTimeout(enemyTurn,300)})}
+function decideFoe(f,h){f.acted=B.round;f.turn++;var sp=f.sp||'',times=1,out={pre:[],sw:[]};
+  if(sp==='double'&&f.turn%3===0)times=2;if(f.boss&&f.turn%4===0)times=2;
+  if(sp==='regen'&&f.hp<f.max){var rg=Math.round(f.max*0.05);f.hp=Math.min(f.max,f.hp+rg);out.pre.push(['🩸 '+f.name+' 再生 '+rg+' HP',''])}
+  if(f.boss&&!f.phase2&&f.hp<=f.max/2){f.phase2=true;f.dmgAdd=(f.dmgAdd||0)+10;f.hit+=2;out.pre.push(['👑 '+f.name+'：「你竟敢……！嚐嚐真正的死亡吧！」——第二階段','crit'])}
+  if(sp==='enrage'&&!f.rage&&f.hp<=f.max*0.4){f.rage=true;f.dmgAdd=(f.dmgAdd||0)+Math.round(f.avg*0.5);out.pre.push(['😡 '+f.name+' 發狂了！傷害提高','fail'])}
+  out.pre.forEach(function(l){log(l[0],l[1])});
+  for(var k=0;k<times;k++){if(hp()<=0)break;var r=rnd(20),ac=h.ac+(B.guard===1?3:0),tot=r+f.hit,s={r:r,tot:tot,ac:ac};
+    if(B.guard===2){s.kind='block';log('🛡️ '+f.name+' 擲出 '+r+'，被你完全格擋')}
+    else if(r===1||(r!==20&&tot<ac&&!B.exposed)){s.kind='miss';log('🎲 '+f.name+' '+(r===1?'擲出 1，失手了':'擲出 '+r+' '+sg(f.hit)+' = '+tot+'，低於你的防禦 '+ac))}
+    else{var dmg=dice(f.dmg)+(f.dmgAdd||0);if(r===20)dmg*=2;if(B.opts.tut)dmg=Math.max(1,Math.round(dmg/2));
+      var before=hp();setHp(B.opts.tut?Math.max(1,before-dmg):before-dmg);s.kind='hit';s.dmg=before-hp();
+      if(sp==='drain'){f.hp=Math.min(f.max,f.hp+Math.round(s.dmg/3));s.drain=1}
+      log('🎲 '+f.name+' '+(r===20?'爆擊！':(B.exposed&&tot<ac?'趁你大失誤，':'')+r+' '+sg(f.hit)+' = '+tot+' 命中')+' → 你 −'+s.dmg,r===20?'fail':'')}
+    out.sw.push(s)}
+  if(times>1)out.multi=f.boss?'骨骸風暴！連續攻擊':'連續攻擊！';return out}
+function showFoe(f,res,k,cb){drawFoes();heroBar();if(k>=res.sw.length)return setTimeout(cb,350);var s=res.sw[k];
+  side(f.name+' 擲骰',res.multi||'');var d=$('die');d.className='foeroll';d.innerHTML='<img src="'+DATA.img.rolling+'" alt="">';busy=true;var t=setInterval(sClack,140);
+  setTimeout(function(){clearInterval(t);showFace(s.r,true);busy=false;
+    if(s.kind==='block')side(s.r+'　被你擋下','完全格擋！','ok');
+    else if(s.kind==='miss')side(s.r===1?'1　失手':s.r+' '+sg(f.hit)+' = '+s.tot,s.r===1?'敵人失手了':'沒打中你（你的防禦 '+s.ac+'）','ok');
+    else{sHit();side(s.r===20?'20　爆擊！':s.r+' '+sg(f.hit)+' = '+s.tot,'你受到 '+s.dmg+' 傷害'+(s.drain?'（被吸走生命）':''),'fail')}
+    heroBar();setTimeout(function(){showFoe(f,res,k+1,cb)},800)},700)}
+// ---------- victory / growth ----------
+function victory(){acts([]);turn('');$('title').textContent='勝利！';save('loot');idleDie();
+  side('勝利！','擲戰利品骰：','crit');$('side').innerHTML+='<div class="tbl"><span>1–9　金幣</span><span>10–16　金幣＋生命藥水</span><span>17–19　金幣＋高級藥水</span><span>20　金幣 ×2＋高級藥水 ×2</span></div>';
   if(B.opts.tut)tip(0,'打贏了！最後<b>擲戰利品骰</b>：點數越高，獎勵越好。');else tip(0,'');
-  rollD20('擲戰利品骰！',function(r){var t=$('side').querySelectorAll('.tbl span'),i=r<=9?0:r<=16?1:r<=19?2:3;if(t[i])t[i].className='on';
-    var g=gold+rnd(6)*Math.max(1,B.floor);if(r===20)g*=2;addItem('coin',g);var msg='金幣 +'+g;
-    if(i===1){addItem('health_potion',1);msg+='、生命藥水 +1'}if(i===2){addItem('greater_potion',1);msg+='、高級生命藥水 +1'}if(i===3){addItem('greater_potion',2);msg+='、高級生命藥水 +2'}
-    S.kills+=B.foes.length;log('🎲 戰利品骰 '+r+' → '+msg+'；經驗 +'+xp,r===20?'crit':'');gainXp(xp);saveB('done');
-    afterGrowth(function(){if(B&&B.opts.tut)tip(0,'練習結束！之後每升一級都會<b>擲成長骰</b>，決定你變強的方向。');acts([['繼續冒險',function(){endBattle('won')},'gold']])})})}
+  rollD20('擲戰利品骰！',function(r){var xp=0,gold=0;B.foes.forEach(function(f){xp+=f.xp;gold+=f.gold});var i=r<=9?0:r<=16?1:r<=19?2:3;
+      var g=gold+rnd(6)*Math.max(1,B.floor);if(r===20)g*=2;addItem('coin',g);var msg='金幣 +'+g;
+      if(i===1){addItem('health_potion',1);msg+='、生命藥水 +1'}if(i===2){addItem('greater_potion',1);msg+='、高級生命藥水 +1'}if(i===3){addItem('greater_potion',2);msg+='、高級生命藥水 +2'}
+      S.kills+=B.foes.length;log('🎲 戰利品骰 '+r+' → '+msg+'；經驗 +'+xp,r===20?'crit':'');gainXp(xp);save('post',{r:r,i:i});return i},
+    function(r,i){postVictory()})}
+function postVictory(){var p=E.pend||{};idleDie();if(p.r)showFace(p.r);$('title').textContent='勝利！';turn('');
+  if(!/tbl/.test($('side').innerHTML)){side('勝利！','','crit');$('side').innerHTML+='<div class="tbl"><span>1–9　金幣</span><span>10–16　金幣＋生命藥水</span><span>17–19　金幣＋高級藥水</span><span>20　金幣 ×2＋高級藥水 ×2</span></div>'}
+  var t=$('side').querySelectorAll('.tbl span');if(p.i!=null&&t[p.i])t[p.i].className='on';
+  tip(5,'等級與經驗以左上的<b>骰子面板</b>為準（Lv、經驗 x/y）。Larch 角色頁的 EXP 欄不使用；升級時會同步等級與 HP 上限。');
+  afterGrowth(function(){if(B&&B.opts.tut)tip(0,'練習結束！之後每升一級都會<b>擲成長骰</b>，決定你變強的方向。');acts([['繼續冒險',function(){endBattle('won')},'gold']])})}
 function gainXp(x){S.xp+=x;while(S.xp>=xpNeed()){S.xp-=xpNeed();S.lv++;S.pg++;S.lvq++}saveStats();drawChip();pumpLv()}
-// pending growth rolls are stored in S.pg so a reload never loses them
 var GROW=[[3,'鐵壁','防禦 +1',function(){S.ac++}],[7,'蠻力','傷害 +2',function(){S.str+=2}],[11,'精準','命中 +1',function(){S.hit++}],[14,'幸運','每場戰鬥幸運重擲 +1',function(){S.luck++}],[17,'狂戰','傷害 +1、命中 +1',function(){S.str++;S.hit++}],[19,'致命','爆擊範圍 +1',function(){S.crit=Math.min(4,S.crit+1)}],[20,'命運眷顧','全部能力提升！',function(){S.ac++;S.hit++;S.str+=2;S.luck++}]];
-function afterGrowth(cb){if(S.pg<=0)return cb();growth(function(){afterGrowth(cb)},'升級！Lv '+(S.lv-S.pg+1))}
-function growth(cb,title){growing=true;showPanel();$('title').textContent=title;$('turn').innerHTML='';acts([]);idleDie();var used=false;
+function gIdx(r){var i=0;while(r>GROW[i][0])i++;return i}
+function afterGrowth(cb){if(S.pg<=0){S.gp=null;return cb()}growth(function(){afterGrowth(cb)})}
+// S.gp keeps a rolled-but-not-accepted growth roll ({r,used}) so a rebuild shows the same roll again
+function growth(cb){growing=true;showPanel();$('title').textContent='升級！成長骰（剩 '+S.pg+' 次）';turn('');acts([]);idleDie();
   var tbl='<div class="tbl">'+GROW.map(function(g,i){var lo=i?GROW[i-1][0]+1:1;return '<span>'+lo+(lo!==g[0]?'–'+g[0]:'')+'　'+g[1]+'：'+g[2]+'</span>'}).join('')+'</div>';
   side('成長骰','','crit');$('side').innerHTML+=tbl;tip(2,'<b>升級了！</b>最大 HP 提升。點骰子擲<b>成長骰</b>決定這次變強的方向，不滿意可以免費重擲一次。');
-  (function go(){rollD20('擲成長骰！',function(r){var i=0;while(r>GROW[i][0])i++;var sp=$('side').querySelectorAll('.tbl span');sp.forEach(function(x){x.className=''});sp[i].className='on';
-    var apply=function(){GROW[i][3]();S.pg=Math.max(0,S.pg-1);saveStats();drawChip();heroBar();log('✨ 成長骰 '+r+' →【'+GROW[i][1]+'】'+GROW[i][2],'crit');growing=false;setTimeout(cb,500)};
-    if(!used&&r<20){acts([['接受【'+GROW[i][1]+'】',apply,'gold'],['免費重擲一次',function(){used=true;go()}]])}else apply()})})()}
+  var choose=function(){var g=S.gp,i=gIdx(g.r),sp=$('side').querySelectorAll('.tbl span');sp.forEach(function(x){x.className=''});sp[i].className='on';showFace(g.r);
+    var apply=function(){GROW[i][3]();S.pg=Math.max(0,S.pg-1);S.gp=null;saveStats();drawChip();heroBar();log('✨ 成長骰 '+g.r+' →【'+GROW[i][1]+'】'+GROW[i][2],'crit');growing=false;setTimeout(cb,500)};
+    if(!g.used&&g.r<20)acts([['接受【'+GROW[i][1]+'】',apply,'gold'],['免費重擲一次',function(){S.gp={used:1};saveStats();roll()}]]);else apply()};
+  var roll=function(){rollD20('擲成長骰！',function(r){S.gp={r:r,used:S.gp&&S.gp.used?1:0};saveStats()},function(){choose()})};
+  if(S.gp&&S.gp.r)choose();else roll()}
 function pumpLv(){if(lvWait||S.lvq<=0)return;if(V.dz_lvup==='true')return;lvWait=true;S.lvq--;saveStats();set('dz_lvup','true')}
+function setFlag(n){if(!n)return;var cur=V[n];set(n,typeof cur==='boolean'?true:'true')}
+function finish(){curCmd='';B=null;resumed=false;tip(0,'');clearB();set('dz_cmd','');showChip()}
 function endBattle(res){var after=B&&B.after,kv=curCmd.split('|')[1];
-  if(res==='won'&&after){B=null;set('dz_res','won');if(after.kind==='chest'){addItem('coin',after.gold);log('寶箱怪吐出了 '+after.gold+' 金幣')}if(after.kind==='altar'&&after.kv)setFlag(after.kv);return finish()}
-  if(res==='won'&&kv)setFlag(kv);set('dz_res',res);B=null;finish()}
-function setFlag(n){var cur=V[n];set(n,typeof cur==='boolean'?true:'true')}
-function finish(){curCmd='';B=null;tip(0,'');clearB();set('dz_cmd','');showChip()}
-function defeat(){acts([]);$('turn').innerHTML='';$('title').textContent='你倒下了……';var g=count('coin'),lost=Math.floor(g/3);saveB('defeat');
-  side('敗北','命運之骰把你帶回營地，掉落了 '+lost+' 金幣。','fail');log('💀 你的意識逐漸模糊……','fail');
+  if(res==='won'&&after){if(after.kind==='chest'){addItem('coin',after.gold)}if(after.kind==='altar')setFlag(after.kv);set('dz_res','won');return finish()}
+  if(res==='won')setFlag(kv);set('dz_res',res);finish()}
+// Defeat: the rule is shown before it is applied — lose a third of your coins; items and equipment are kept.
+function defeat(){acts([]);turn('');$('title').textContent='你倒下了……';var lost=E&&E.stage==='defeat'&&E.pend?E.pend.lost:Math.floor(count('coin')/3);save('defeat',{lost:lost});
+  side('敗北','命運之骰會把你帶回營地。<br>代價：掉落 '+lost+' 金幣（身上金幣的三分之一）。<br>道具與裝備都會保留。','fail');log('💀 你的意識逐漸模糊……','fail');
   acts([['回到營地',function(){addItem('coin',-lost);setHp(1);set('dz_res','lost');set('dz_dead','true');finish()},'gold']])}
 // ---------- altar / chest ----------
 function table(rows){return '<div class="tbl">'+rows.map(function(r){return '<span>'+r+'</span>'}).join('')+'</div>'}
 function pick(r,cuts){var i=0;while(r>cuts[i])i++;return i}
-function openObject(title,img,label){mode='obj';B=null;showPanel();$('turn').innerHTML='';$('foes').innerHTML='<div class="foe"><img src="'+img+'" alt=""><div>'+label+'</div></div>';$('log').innerHTML='';heroBar();$('title').textContent=title;idleDie()}
+function openObject(title,img,label){mode='obj';B=null;showPanel();turn('');$('foes').innerHTML='<div class="foe"><img src="'+img+'" alt=""><div>'+label+'</div></div>';heroBar();$('title').textContent=title;idleDie()}
+var ALTAR=['1　詛咒：怪物伏擊','2–6　祝福：HP 全滿','7–13　財富：金幣與藥水','14–19　啟示：獲得一次成長骰','20　神諭：升一級＋傳說裝備'];
 function altar(kv,floor){var F=DATA.floors[floor];openObject('命運祭壇',DATA.img.dice20,'命運祭壇');
-  side('擲出命運！','');$('side').innerHTML+=table(['1　詛咒：怪物伏擊','2–6　祝福：HP 全滿','7–13　財富：金幣與藥水','14–19　啟示：獲得一次成長骰','20　神諭：升一級＋傳說裝備']);
-  tip(3,'<b>命運祭壇</b>：點骰子擲 D20，點數決定獎勵——擲出 1 會被詛咒！');
-  rollD20('點擊骰子，擲出命運！',function(r){var i=pick(r,[1,6,13,19,20]);$('side').querySelectorAll('.tbl span')[i].className='on';setFlag(kv);
-    var leave=function(){acts([['離開祭壇',finish,'gold']])};
-    if(i===0){log('🎲 1——詛咒！黑霧中竄出怪物！','fail');setTimeout(function(){startBattle([F.strong,F.strong],floor,{title:'祭壇的詛咒',noflee:true});B.after={kind:'altar',kv:kv};saveB('fight')},900);return}
-    if(i===1){setHp(maxHp());log('🎲 '+r+'——溫暖的光芒治好了你的傷','crit');saveB('done');leave()}
-    if(i===2){var g=Math.round(F.gold*1.5);addItem('coin',g);addItem(F.pot,1);log('🎲 '+r+'——金幣 +'+g+'、'+DATA.items[F.pot].name+' +1');saveB('done');leave()}
-    if(i===3){log('🎲 '+r+'——古老的啟示流入腦海！');S.pg++;saveStats();saveB('done');setTimeout(function(){afterGrowth(leave)},700)}
-    if(i===4){log('🎲 20——神諭降臨！','crit');addItem(F.gearB,1);addItem('phoenix_feather',1);log('🎁 獲得 '+DATA.items[F.gearB].name+'、鳳凰羽毛！記得到選單裝備','crit');gainXp(xpNeed()-S.xp);saveB('done');setTimeout(function(){afterGrowth(leave)},600)}})}
+  side('擲出命運！','');$('side').innerHTML+=table(ALTAR);tip(3,'<b>命運祭壇</b>：點骰子擲 D20，點數決定獎勵——擲出 1 會被詛咒！每座祭壇只能擲一次。');save('roll',{act:'altar'});
+  rollD20('點擊骰子，擲出命運！',function(r){var i=pick(r,[1,6,13,19,20]);setFlag(kv);
+      if(i===0){log('🎲 1——詛咒！黑霧中竄出怪物！','fail');startBattle([F.strong,F.strong],floor,{title:'祭壇的詛咒',noflee:true});B.after={kind:'altar',kv:kv};save('menu');return i}
+      if(i===1){setHp(maxHp());log('🎲 '+r+'——溫暖的光芒治好了你的傷','crit')}
+      if(i===2){var g=Math.round(F.gold*1.5);addItem('coin',g);addItem(F.pot,1);log('🎲 '+r+'——金幣 +'+g+'、'+DATA.items[F.pot].name+' +1')}
+      if(i===3){S.pg++;saveStats();log('🎲 '+r+'——古老的啟示流入腦海！獲得一次成長骰')}
+      if(i===4){addItem(F.gearB,1);addItem('phoenix_feather',1);log('🎁 20——神諭降臨！獲得 '+DATA.items[F.gearB].name+'、鳳凰羽毛（記得到選單裝備）','crit');gainXp(xpNeed()-S.xp)}
+      save('done',{r:r,i:i});return i},
+    function(r,i){if(i===0)return;objDone()})}
+var CHEST=function(F){return['1　寶箱怪！','2–9　金幣','10–17　藥水＋金幣','18–19　'+DATA.items[F.gearA].name,'20　'+DATA.items[F.gearB].name+'＋金幣']};
 function chest(floor){var F=DATA.floors[floor];openObject('寶箱',DATA.img.chest,'寶箱');
-  side('開箱骰','');$('side').innerHTML+=table(['1　寶箱怪！','2–9　金幣','10–17　藥水＋金幣','18–19　'+DATA.items[F.gearA].name,'20　'+DATA.items[F.gearB].name+'＋金幣']);
-  tip(4,'<b>寶箱</b>也要擲骰：點數越高越好，擲出 1 是寶箱怪！');
-  rollD20('點擊骰子開箱！',function(r){var i=pick(r,[1,9,17,19,20]);$('side').querySelectorAll('.tbl span')[i].className='on';
-    if(i===0){log('🎲 1——寶箱張開了血盆大口！','fail');setTimeout(function(){startBattle([F.strong],floor,{title:'寶箱怪！'});B.after={kind:'chest',gold:F.gold*2};saveB('fight')},900);return}
-    if(i===1){addItem('coin',F.gold);log('🎲 '+r+'——金幣 +'+F.gold)}
-    if(i===2){addItem(F.pot,2);addItem('coin',Math.round(F.gold/2));log('🎲 '+r+'——'+DATA.items[F.pot].name+' +2、金幣 +'+Math.round(F.gold/2))}
-    if(i===3){addItem(F.gearA,1);log('🎲 '+r+'——獲得 '+DATA.items[F.gearA].name+'！記得到選單裝備','crit')}
-    if(i===4){addItem(F.gearB,1);addItem('coin',F.gold);log('🎲 20——傳說級的光芒！獲得 '+DATA.items[F.gearB].name+'！','crit')}
-    saveB('done');acts([['收下',finish,'gold']])})}
-// ---------- resume after the HUD is reloaded ----------
+  side('開箱骰','');$('side').innerHTML+=table(CHEST(F));tip(4,'<b>寶箱</b>也要擲骰：點數越高越好，擲出 1 是寶箱怪！');save('roll',{act:'chest'});
+  rollD20('點擊骰子開箱！',function(r){var i=pick(r,[1,9,17,19,20]);
+      if(i===0){log('🎲 1——寶箱張開了血盆大口！','fail');startBattle([F.strong],floor,{title:'寶箱怪！'});B.after={kind:'chest',gold:F.gold*2};save('menu');return i}
+      if(i===1){addItem('coin',F.gold);log('🎲 '+r+'——金幣 +'+F.gold)}
+      if(i===2){addItem(F.pot,2);addItem('coin',Math.round(F.gold/2));log('🎲 '+r+'——'+DATA.items[F.pot].name+' +2、金幣 +'+Math.round(F.gold/2))}
+      if(i===3){addItem(F.gearA,1);log('🎲 '+r+'——獲得 '+DATA.items[F.gearA].name+'！記得到選單裝備','crit')}
+      if(i===4){addItem(F.gearB,1);addItem('coin',F.gold);log('🎲 20——傳說級的光芒！獲得 '+DATA.items[F.gearB].name+'！','crit')}
+      save('done',{r:r,i:i});return i},
+    function(r,i){if(i===0)return;objDone()})}
+function objDone(){var p=E.pend||{},sp=$('side').querySelectorAll('.tbl span');if(sp[p.i])sp[p.i].className='on';if(p.r)showFace(p.r);
+  afterGrowth(function(){acts([[curCmd.indexOf('altar')===0?'離開祭壇':'收下',finish,'gold']])})}
+// ---------- resume after the host rebuilds the HUD ----------
 function resume(){var o=null;try{o=JSON.parse(V.dz_b||'')}catch(e){}
-  if(!o||o.cmd!==V.dz_cmd)return false;curCmd=o.cmd;
-  var restoreLog=function(){$('log').innerHTML='';(o.log||[]).forEach(function(l){log(l[0],l[1])})};
-  if(o.stage==='done'||o.stage==='defeat'||!o.B){ // the outcome was already applied: just let the player leave
-    mode='obj';showPanel();$('turn').innerHTML='';$('foes').innerHTML='';restoreLog();heroBar();idleDie();$('title').textContent='命運之骰';side('結果已記錄','');
-    if(o.stage==='defeat'){B=null;defeat();return true}
-    afterGrowth(function(){acts([['繼續冒險',function(){if(o.B){B=o.B;endBattle('won')}else finish()},'gold']])});return true}
-  B=o.B;restoreLog();openBattle();log('（戰鬥已恢復）');if(o.stage==='victory')victory();else if(o.stage==='foe')enemyTurn();else playerTurn();return true}
+  if(!o||o.cmd!==V.dz_cmd)return false;curCmd=o.cmd;E=o;B=o.B;resumed=true;var p=o.pend||{},c=curCmd.split('|');
+  $('log').innerHTML='';(o.log||[]).forEach(function(l){log(l[0],l[1])});
+  if(!B){var F=DATA.floors[isNaN(+c[2])?1:+c[2]];
+    if(c[0]==='altar'){openObject('命運祭壇',DATA.img.dice20,'命運祭壇');side('擲出命運！','');$('side').innerHTML+=table(ALTAR);if(o.stage==='done')objDone();else altar(c[1],+c[2]||0);return true}
+    if(c[0]==='chest'){openObject('寶箱',DATA.img.chest,'寶箱');side('開箱骰','');$('side').innerHTML+=table(CHEST(F));if(o.stage==='done')objDone();else chest(+c[2]||0);return true}
+    return false}
+  capHp();openBattle();
+  switch(o.stage){
+    case 'roll':if(p.act==='defend')defend();else if(p.act==='flee')flee();else attack();break;
+    case 'luck':turn('me');drawFoes();luckChoice();break;
+    case 'foe':enemyTurn();break;
+    case 'loot':victory();break;
+    case 'post':postVictory();break;
+    case 'fled':endBattle('fled');break;
+    case 'defeat':defeat();break;
+    default:playerTurn()}
+  return true}
 // ---------- command dispatch ----------
-function onCmd(){var c=V.dz_cmd||'';if(!c||c===curCmd||mode!=='idle')return;curCmd=c;var p=c.split('|');
+function onCmd(){var c=V.dz_cmd||'';if(!c||c===curCmd||mode!=='idle')return;curCmd=c;resumed=false;var p=c.split('|');$('log').innerHTML='';
   if(p[0]==='battle'){var ids=p[2].split(','),fl=isNaN(+p[3])?1:+p[3];startBattle(ids,fl,{noflee:p[4]==='noflee',title:p[5]||'',tut:p[6]==='tut'})}
   else if(p[0]==='altar')altar(p[1],isNaN(+p[2])?1:+p[2]);
   else if(p[0]==='chest')chest(isNaN(+p[2])?1:+p[2]);
   else if(p[0]==='heal'){setHp(maxHp());finish()}
   else finish()}
-// keyboard: Space / Enter stops the die or presses the highlighted button
 addEventListener('keydown',function(e){if(e.key!==' '&&e.key!=='Enter')return;e.preventDefault();if(busy)return;var d=$('die');if(d.onclick)return d.onclick();var b=$('acts').querySelector('button.gold:not([disabled])')||$('acts').querySelector('button:not([disabled])');if(b)b.click()});
 addEventListener('message',function(e){var d=e.data||{};if(d.type!=='larch:hud:init'&&d.type!=='larch:hud:update')return;V=d.variables||{};onMap=/^map-/.test(d.cardId||'');
   if(!growing||!S)S=stats();
-  if(!ready){ready=true;if(!/"lv"/.test(V.dz||''))saveStats();if(!(V.dz_cmd&&resume()))showChip()}
+  if(!ready){ready=true;if(!/"lv"/.test(V.dz||''))saveStats();if(!(V.dz_cmd&&resume())){if(S.pg>0&&!V.dz_cmd){} showChip()}}
   if(lvWait&&V.dz_lvup!=='true')lvWait=false;pumpLv();
   if(mode==='idle')showChip();else heroBar();onCmd()});
 post({type:'larch:ready'});
